@@ -32,9 +32,6 @@ def check_all(player, player_bullets, enemy_group, enemy_bullets,
                 explosion_mgr.spawn(enemy.rect.centerx, enemy.rect.centery,
                                     'large' if enemy.score_value >= 300 else 'small')
                 sfx.play('explosion_small')
-                # Drop items
-                if hasattr(enemy, 'drop_item') and enemy.drop_item:
-                    enemy.drop_item()
 
     # ── Enemy bullets ↔ Player ─────────────────────────────────
     if player.alive() and not player.invincible:
