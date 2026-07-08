@@ -1,0 +1,158 @@
+# ============================================================
+#  player/player.py  —  Player aircraft sprite
+# ============================================================
+import pygame
+from config import (SCREEN_WIDTH, SCREEN_HEIGHT,
+                    PLAYER_SPEED, PLAYER_LIVES, PLAYER_BOMB_COUNT,
+                    PLAYER_INVINCIBLE_FRAMES, PLAYER_SHOOT_COOLDOWN,
+                    KEY_SHOOT, KEY_BOMB,
+                    SILVER, CYAN, YELLOW, ORANGE, DARK_GRAY, WHITE)
+from player.weapon  import WeaponSystem
+from player.energy  import EnergySystem
+from player.option  import OptionManager
+from bullet.player_bullet import spawn_weapon_bullets
+
+
+# ── Procedural aircraft surface ──────────────────────────────
+def _build_player_surf():
+    w, h = 48, 64
+    s = pygame.Surface((w, h), pygame.SRCALPHA)
+
+    # Engine exhaust glow (bottom)
+    pygame.draw.ellipse(s, (255, 150, 30, 160), (18, 57, 12, 7))
+
+    # Tail fins
+    pygame.draw.polygon(s, (140, 150, 160), [(8, 52), (16, 44), (16, 60), (8, 60)])
+    pygame.draw.polygon(s, (140, 150, 160), [(40, 52), (32, 44), (32, 60), (40, 60)])
+
+    # Main wings (swept back)
+    pygame.draw.polygon(s, (170, 180, 192), [(0, 34), (48, 34), (32, 46), (16, 46)])
+    pygame.draw.polygon(s, (130, 140, 152), [(0, 34), (48, 34), (32, 46), (16, 46)], 1)
+
+    # Body (silver fuselage)
+    pygame.draw.ellipse(s, (200, 212, 224), (15, 5, 18, 54))
+    pygame.draw.ellipse(s, (160, 172, 184), (15, 5, 18, 54), 2)
+
+    # Engine intake (nose)
+    pygame.draw.ellipse(s, (70, 80, 90), (18, 3, 12, 7))
+
+    # Cockpit canopy (blue-tinted)
+    pygame.draw.ellipse(s, (80, 160, 230), (18, 10, 12, 18))
+    pygame.draw.ellipse(s, (160, 220, 255, 140), (20, 12, 8, 10))
+
+    # Engine exhaust ring
+    pygame.draw.ellipse(s, (55, 60, 70), (18, 54, 12, 8))
+
+    # Propeller line
+    pygame.draw.line(s, (90, 100, 110), (12, 5), (36, 5), 2)
+
+    return s
+
+
+# ── Hit mask ─────────────────────────────────────────────────
+def _build_hit_surf():
+    """Smaller inner rect for precise hit detection."""
+    s = pygame.Surface((20, 20), pygame.SRCALPHA)
+    pygame.draw.ellipse(s, WHITE, (0, 0, 20, 20))
+    return s
+
+
+class Player(pygame.sprite.Sprite):
+    def __init__(self, x: int, y: int):
+        super().__init__()
+
+        self._normal_surf    = _build_player_surf()
+        self._hit_surf       = _build_hit_surf()   # used for mask collision
+        self.image           = self._normal_surf
+        self.rect            = self.image.get_rect(center=(x, y))
+        self.mask            = pygame.mask.from_surface(self.image)
+
+        # Sub-systems
+        self.weapon   = WeaponSystem()
+        self.energy   = EnergySystem()
+        self.options  = OptionManager()
+
+        # State
+        self.lives           = PLAYER_LIVES
+        self.bomb_count      = PLAYER_BOMB_COUNT
+        self.invincible      = False
+        self._inv_timer      = 0
+        self._shoot_cd       = 0
+        self._blink          = False
+
+    # ── Update ───────────────────────────────────────────────
+    def update(self, keys, bullet_group):
+        self._move(keys)
+        self._handle_shoot(keys, bullet_group)
+        self._tick_invincibility()
+        self.energy.drain()
+        self.options.update(self.rect.centerx, self.rect.centery)
+
+        if self._shoot_cd > 0:
+            self._shoot_cd -= 1
+
+    # ── Movement ─────────────────────────────────────────────
+    def _move(self, keys):
+        dx = dy = 0
+        if keys[pygame.K_LEFT]  or keys[pygame.K_a]: dx -= 1
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]: dx += 1
+        if keys[pygame.K_UP]    or keys[pygame.K_w]: dy -= 1
+        if keys[pygame.K_DOWN]  or keys[pygame.K_s]: dy += 1
+        self.rect.x = max(0, min(SCREEN_WIDTH  - self.rect.width,
+                                 self.rect.x + dx * PLAYER_SPEED))
+        self.rect.y = max(0, min(SCREEN_HEIGHT - self.rect.height,
+                                 self.rect.y + dy * PLAYER_SPEED))
+
+    # ── Shooting ─────────────────────────────────────────────
+    def _handle_shoot(self, keys, bullet_group):
+        if keys[KEY_SHOOT] and self._shoot_cd <= 0:
+            spawn_weapon_bullets(self.weapon.current,
+                                 self.rect.centerx,
+                                 self.rect.top + 6,
+                                 bullet_group,
+                                 self.options.positions())
+            self._shoot_cd = PLAYER_SHOOT_COOLDOWN
+
+    # ── Invincibility blink ──────────────────────────────────
+    def _tick_invincibility(self):
+        if self.invincible:
+            self._inv_timer -= 1
+            self._blink = (self._inv_timer // 5) % 2 == 0
+            if self._inv_timer <= 0:
+                self.invincible  = False
+                self._blink      = False
+                self.image       = self._normal_surf
+
+    # ── Take damage ──────────────────────────────────────────
+    def take_damage(self, amount: int) -> bool:
+        """Returns True if the player lost a life."""
+        self.energy.recover(-amount)   # negative recover = drain
+        if self.energy.is_empty:
+            return self._lose_life()
+        return False
+
+    def _lose_life(self) -> bool:
+        self.lives -= 1
+        if self.lives > 0:
+            self.energy.full_restore()
+            self.invincible = True
+            self._inv_timer = PLAYER_INVINCIBLE_FRAMES
+            self.options.remove_all()
+            return False
+        return True   # game over
+
+    # ── Draw ─────────────────────────────────────────────────
+    def draw(self, surface):
+        if self._blink:
+            return
+        surface.blit(self.image, self.rect)
+        self.options.draw(surface)
+
+    # ── Properties ───────────────────────────────────────────
+    @property
+    def energy_value(self) -> float:
+        return self.energy.value
+
+    @property
+    def center(self):
+        return self.rect.center

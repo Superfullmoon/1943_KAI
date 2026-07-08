@@ -1,0 +1,18 @@
+WAVES = [
+    (80,  'HeavyFighter', 140, 'dive_left',  {}, 4, 75),
+    (80,  'HeavyFighter', 500, 'dive_right', {}, 4, -75),
+    (220, 'MediumFighter', 320, 'kamikaze',  {}, 7, 55),
+    (360, 'SmallFighter', 320, 'zigzag',     {}, 10, 42),
+    (480, 'HeavyFighter', 220, 'circle_then_exit',{}, 4, 110),
+    (600, 'GroundTurret', 80, 'stationary',  {}, 7, 82),
+    (720, 'MediumFighter', 160, 'kamikaze',  {}, 4, 80),
+    (720, 'MediumFighter', 480, 'kamikaze',  {}, 4, -80),
+    (900, 'HeavyFighter', 320, 'straight',   {}, 4, 110),
+    (1080,'SmallFighter', 320, 'kamikaze',   {}, 10, 42),
+    (1260,'HeavyFighter', 180, 'dive_left',  {}, 3, 110),
+    (1260,'HeavyFighter', 460, 'dive_right', {}, 3, -110),
+    (1440,'MediumFighter', 320, 'zigzag',    {}, 6, 68),
+    (1620,'HeavyFighter', 320, 'kamikaze',   {}, 5, 90),
+    (1800,'SmallFighter', 320, 'kamikaze',   {}, 12, 38),
+    (2000, 'BOSS', 320, '', {}, 1, 0),
+]
