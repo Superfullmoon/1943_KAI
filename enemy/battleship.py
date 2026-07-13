@@ -7,23 +7,24 @@ from config import (SCREEN_WIDTH, GRAY, DARK_GRAY, WHITE, RED, ORANGE,
 from enemy.boss import BossBase, BossComponent
 
 
+import os
+from config import load_and_scale_sprite
+
+_BATTLESHIP_IMG = None
+
 def _draw_ship_body(surf, w, h, hull_col, deck_col, name_col=None):
-    """Utility to draw a battleship body."""
-    # Hull
-    pygame.draw.ellipse(surf, hull_col, (10, h // 4, w - 20, h * 3 // 4))
-    # Deck
-    pygame.draw.rect(surf, deck_col, (20, 10, w - 40, h // 2))
-    # Superstructure
-    pygame.draw.rect(surf, deck_col, (w // 2 - 20, 5, 40, h // 3))
-    # Bow
-    pts = [(w // 2, 0), (20, h // 4), (w - 20, h // 4)]
-    pygame.draw.polygon(surf, hull_col, pts)
-    # Deck lines
-    for i in range(3):
-        y = h // 4 + i * 12
-        pygame.draw.line(surf, (*WHITE, 60), (25, y), (w - 25, y), 1)
-    # Waterline stripe
-    pygame.draw.rect(surf, (200, 180, 120), (15, h * 3 // 4, w - 30, 4))
+    """Utility to draw a battleship body using a generated image."""
+    global _BATTLESHIP_IMG
+    if _BATTLESHIP_IMG is None:
+        img_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'image', 'boss', 'battleship.png')
+        _BATTLESHIP_IMG = load_and_scale_sprite(img_path, 200, 100) # Load at a high resolution
+        if not _BATTLESHIP_IMG:
+            _BATTLESHIP_IMG = pygame.Surface((w, h), pygame.SRCALPHA)
+            _BATTLESHIP_IMG.fill((100, 100, 100))
+
+    scaled_img = pygame.transform.smoothscale(_BATTLESHIP_IMG, (w, h))
+    surf.blit(scaled_img, (0, 0))
+
 
 
 # ─────────────────────────────────────────────────────────────

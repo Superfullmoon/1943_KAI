@@ -9,7 +9,7 @@
 #  x_gap  : pixel gap between enemies in a group
 
 WAVES = [
-    # ── Opening formation ─────────────────────────────────────
+    # ── Opening formation ──────────────────────────────────────
     (90,  'SmallFighter', 160, 'dive_left',  {}, 3, 70),
     (150, 'SmallFighter', 480, 'dive_right', {}, 3, -70),
     (240, 'SmallFighter', 320, 'straight',   {}, 1, 0),
@@ -18,29 +18,37 @@ WAVES = [
     (360, 'SmallFighter', 100, 'zigzag',     {}, 2, 80),
     (360, 'SmallFighter', 500, 'zigzag',     {}, 2, -80),
 
-    # ── Medium fighter appears ────────────────────────────────
-    (480, 'MediumFighter', 200, 'straight',  {}, 1, 0),
-    (480, 'MediumFighter', 440, 'straight',  {}, 1, 0),
+    # ── Small warship formation ──────────────────────────────
+    (480, 'SmallWarship', 160, 'straight',   {}, 1, 0),
+    (480, 'SmallWarship', 480, 'straight',   {}, 1, 0),
 
-    # ── Ground turrets (scroll with background) ───────────────
-    (600, 'GroundTurret', 130, 'stationary', {}, 1, 0),
-    (600, 'GroundTurret', 510, 'stationary', {}, 1, 0),
+    # ── Medium fighter appears ────────────────────────────────
+    (600, 'MediumFighter', 200, 'straight',  {}, 1, 0),
+    (600, 'MediumFighter', 440, 'straight',  {}, 1, 0),
+
+    # ── Medium warship ────────────────────────────────────────
+    (720, 'MediumWarship', 320, 'straight',  {}, 1, 0),
 
     # ── Kamikaze pack ─────────────────────────────────────────
-    (720, 'SmallFighter', 320, 'kamikaze',   {}, 4, 60),
+    (840, 'SmallFighter', 320, 'kamikaze',   {}, 4, 60),
 
     # ── Mixed wave ────────────────────────────────────────────
-    (900, 'MediumFighter', 160, 'dive_left',  {}, 2, 80),
-    (900, 'SmallFighter',  480, 'dive_right', {}, 3, -55),
+    (960, 'MediumFighter', 160, 'dive_left',  {}, 2, 80),
+    (960, 'SmallFighter',  480, 'dive_right', {}, 3, -55),
 
-    # ── Heavy fighter ────────────────────────────────────────
+    # ── Heavy fighter + warships ──────────────────────────────
     (1080, 'HeavyFighter', 320, 'straight',  {}, 1, 0),
+    (1080, 'SmallWarship', 120, 'straight',  {}, 1, 0),
+    (1080, 'SmallWarship', 520, 'straight',  {}, 1, 0),
+
+    # ── Large warship ─────────────────────────────────────────
+    (1200, 'LargeWarship', 320, 'straight',  {}, 1, 0),
 
     # ── Pre-boss wave ─────────────────────────────────────────
-    (1260, 'SmallFighter', 100, 'zigzag',    {}, 2, 80),
-    (1260, 'SmallFighter', 540, 'zigzag',    {}, 2, -80),
-    (1320, 'MediumFighter', 320, 'straight', {}, 2, 100),
+    (1320, 'SmallFighter', 100, 'zigzag',    {}, 2, 80),
+    (1320, 'SmallFighter', 540, 'zigzag',    {}, 2, -80),
+    (1380, 'MediumFighter', 320, 'straight', {}, 2, 100),
 
-    # ── BOSS ─────────────────────────────────────────────────
-    (1500, 'BOSS', 320, '', {}, 1, 0),
+    # ── BOSS ──────────────────────────────────────────────────
+    (1560, 'BOSS', 320, '', {}, 1, 0),
 ]

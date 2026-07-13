@@ -13,38 +13,45 @@ from player.option  import OptionManager
 from bullet.player_bullet import spawn_weapon_bullets
 
 
-# ── Procedural aircraft surface ──────────────────────────────
+# ── Player aircraft surface (hand-crafted P-38 style) ────────
 def _build_player_surf():
-    w, h = 48, 64
+    w, h = 52, 68
     s = pygame.Surface((w, h), pygame.SRCALPHA)
 
-    # Engine exhaust glow (bottom)
-    pygame.draw.ellipse(s, (255, 150, 30, 160), (18, 57, 12, 7))
+    # ── Twin-boom fuselage (P-38 style) ────────────────────────
+    # Left boom
+    pygame.draw.ellipse(s, (160, 175, 190), (4,  20, 10, 40))
+    pygame.draw.ellipse(s, (200, 215, 228), (5,  22,  8, 36))
+    # Right boom
+    pygame.draw.ellipse(s, (160, 175, 190), (38, 20, 10, 40))
+    pygame.draw.ellipse(s, (200, 215, 228), (39, 22,  8, 36))
 
-    # Tail fins
-    pygame.draw.polygon(s, (140, 150, 160), [(8, 52), (16, 44), (16, 60), (8, 60)])
-    pygame.draw.polygon(s, (140, 150, 160), [(40, 52), (32, 44), (32, 60), (40, 60)])
+    # ── Center nacelle ──────────────────────────────────────────
+    pygame.draw.ellipse(s, (140, 158, 175), (18,  8, 16, 52))
+    pygame.draw.ellipse(s, (200, 218, 235), (20, 10, 12, 46))
 
-    # Main wings (swept back)
-    pygame.draw.polygon(s, (170, 180, 192), [(0, 34), (48, 34), (32, 46), (16, 46)])
-    pygame.draw.polygon(s, (130, 140, 152), [(0, 34), (48, 34), (32, 46), (16, 46)], 1)
+    # ── Wing ────────────────────────────────────────────────────
+    wing_pts = [(4, 36), (48, 36), (44, 44), (8, 44)]
+    pygame.draw.polygon(s, (150, 165, 182), wing_pts)
+    pygame.draw.polygon(s, (180, 198, 215), [(6, 37), (46, 37), (43, 42), (9, 42)])
 
-    # Body (silver fuselage)
-    pygame.draw.ellipse(s, (200, 212, 224), (15, 5, 18, 54))
-    pygame.draw.ellipse(s, (160, 172, 184), (15, 5, 18, 54), 2)
+    # ── Horizontal stabilizer (rear) ────────────────────────────
+    stab_pts = [(10, 56), (42, 56), (40, 62), (12, 62)]
+    pygame.draw.polygon(s, (130, 148, 165), stab_pts)
 
-    # Engine intake (nose)
-    pygame.draw.ellipse(s, (70, 80, 90), (18, 3, 12, 7))
+    # ── Engine intake circles ────────────────────────────────────
+    pygame.draw.circle(s, (80, 90, 100), (9, 22), 5)
+    pygame.draw.circle(s, (50, 60, 70),  (9, 22), 3)
+    pygame.draw.circle(s, (80, 90, 100), (43, 22), 5)
+    pygame.draw.circle(s, (50, 60, 70),  (43, 22), 3)
 
-    # Cockpit canopy (blue-tinted)
-    pygame.draw.ellipse(s, (80, 160, 230), (18, 10, 12, 18))
-    pygame.draw.ellipse(s, (160, 220, 255, 140), (20, 12, 8, 10))
+    # ── Cockpit ──────────────────────────────────────────────────
+    pygame.draw.ellipse(s, (60, 120, 200), (21, 18, 10, 14))
+    pygame.draw.ellipse(s, (140, 200, 255, 180), (22, 19, 8, 11))
 
-    # Engine exhaust ring
-    pygame.draw.ellipse(s, (55, 60, 70), (18, 54, 12, 8))
-
-    # Propeller line
-    pygame.draw.line(s, (90, 100, 110), (12, 5), (36, 5), 2)
+    # ── Star emblem on wing ──────────────────────────────────────
+    pygame.draw.circle(s, (200, 30, 30), (26, 40), 5)
+    pygame.draw.circle(s, (255, 255, 255), (26, 40), 3)
 
     return s
 

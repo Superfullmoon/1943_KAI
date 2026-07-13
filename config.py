@@ -107,3 +107,13 @@ KEY_BOMB  = pygame.K_x
 KEY_START = pygame.K_RETURN
 KEY_PAUSE = pygame.K_ESCAPE
 
+def load_and_scale_sprite(path, target_w, target_h, colorkey='auto'):
+    try:
+        # Load the pre-processed image which already has a transparent background
+        img = pygame.image.load(path).convert_alpha()
+        img = pygame.transform.smoothscale(img, (target_w, target_h))
+        return img
+    except Exception as e:
+        print("Failed to load sprite {}: {}".format(path, e))
+        return None
+

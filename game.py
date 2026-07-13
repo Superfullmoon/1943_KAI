@@ -349,3 +349,17 @@ class Game:
         if (pygame.time.get_ticks() // 400) % 2 == 0:
             prompt = font_md.render("PRESS ENTER TO MAIN MENU", True, SILVER)
             self.screen.blit(prompt, (SCREEN_WIDTH // 2 - prompt.get_width() // 2, SCREEN_HEIGHT // 2 + 130))
+
+
+    def run(self):
+        """게임 메인 루프."""
+        while self.running:
+            self.clock.tick(FPS)   # FPS는 설정 파일에 정의된 값 (없으면 60)
+            self.handle_events()
+            self.update()
+            self.draw()
+
+        # 종료 시 마무리
+        self.save_highscore()
+        pygame.quit()
+        sys.exit()

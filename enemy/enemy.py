@@ -81,26 +81,58 @@ class BaseEnemy(pygame.sprite.Sprite):
 # ─────────────────────────────────────────────────────────────
 #  Small Fighter (Type A — red)
 # ─────────────────────────────────────────────────────────────
+import os
+
+def _build_enemy_img(w, h, color_main=(60, 120, 60)):
+    """Build a Zero-style enemy fighter procedurally."""
+    s = pygame.Surface((w, h), pygame.SRCALPHA)
+    cx, cy = w // 2, h // 2
+
+    # ── Fuselage ─────────────────────────────────────────────
+    pygame.draw.ellipse(s, color_main, (cx - 5, 2, 10, h - 4))
+    pygame.draw.ellipse(s, (min(color_main[0]+40, 255),
+                            min(color_main[1]+40, 255),
+                            min(color_main[2]+20, 255)),
+                        (cx - 3, 4, 6, h - 10))
+
+    # ── Wings ───────────────────────────────────────────────
+    wing_y = cy - 4
+    pygame.draw.polygon(s, color_main,
+                        [(0, wing_y + 6), (w, wing_y + 6),
+                         (w - 4, wing_y - 2), (4, wing_y - 2)])
+
+    # ── Engine cowling (front circle) ───────────────────────
+    pygame.draw.circle(s, (40, 40, 40), (cx, h - 6), 5)
+    pygame.draw.circle(s, (80, 80, 80), (cx, h - 6), 3)
+
+    # ── Cockpit ─────────────────────────────────────────────
+    pygame.draw.ellipse(s, (50, 100, 180), (cx - 4, cy - 8, 8, 10))
+    pygame.draw.ellipse(s, (130, 190, 255, 180), (cx - 3, cy - 7, 6, 7))
+
+    # ── Red rising sun circle (tail marking) ────────────────
+    pygame.draw.circle(s, (200, 30, 30), (cx, wing_y), 5)
+    pygame.draw.circle(s, (255, 80, 80), (cx, wing_y), 3)
+
+    # ── Horizontal stabilizer ───────────────────────────────
+    pygame.draw.polygon(s, (50, 100, 50),
+                        [(cx - 10, 6), (cx + 10, 6), (cx + 8, 12), (cx - 8, 12)])
+    return s
+
+
+def _get_enemy_img(w, h, color_main=(60, 120, 60)):
+    return _build_enemy_img(w, h, color_main)
+
 class SmallFighter(BaseEnemy):
     score_value = SCORE_SMALL_ENEMY
     hp_max      = 30
 
     def _build_image(self):
         w, h = 34, 34
-        s = pygame.Surface((w, h), pygame.SRCALPHA)
-        # Wings
-        pygame.draw.polygon(s, (180, 30, 30), [(0, 20), (34, 20), (22, 30), (12, 30)])
-        # Body
-        pygame.draw.ellipse(s, (210, 40, 40), (11, 4, 12, 26))
-        # Cockpit
-        pygame.draw.ellipse(s, (80, 80, 110), (14, 8, 6, 9))
-        # Engine glow
-        pygame.draw.ellipse(s, (255, 180, 50, 180), (14, 28, 6, 4))
-        self.image = s
+        self.image = _get_enemy_img(w, h, color_main=(60, 120, 60))
 
 
 # ─────────────────────────────────────────────────────────────
-#  Medium Fighter (Type B — orange)
+#  Medium Fighter (Type B — dark blue)
 # ─────────────────────────────────────────────────────────────
 class MediumFighter(BaseEnemy):
     score_value = SCORE_MEDIUM_ENEMY
@@ -113,12 +145,7 @@ class MediumFighter(BaseEnemy):
 
     def _build_image(self):
         w, h = 44, 44
-        s = pygame.Surface((w, h), pygame.SRCALPHA)
-        pygame.draw.polygon(s, (200, 100, 20), [(0, 26), (44, 26), (30, 38), (14, 38)])
-        pygame.draw.ellipse(s, (230, 120, 30), (14, 4, 16, 36))
-        pygame.draw.ellipse(s, (80, 80, 100), (18, 8, 8, 12))
-        pygame.draw.ellipse(s, (255, 200, 80, 180), (18, 38, 8, 5))
-        self.image = s
+        self.image = _get_enemy_img(w, h, color_main=(40, 60, 130))
 
     def _fire(self):
         from bullet.enemy_bullet import EnemyBullet, spawn_aimed
@@ -132,7 +159,7 @@ class MediumFighter(BaseEnemy):
 
 
 # ─────────────────────────────────────────────────────────────
-#  Large Heavy Fighter (Type C — dark green)
+#  Large Heavy Fighter (Type C — red/brown)
 # ─────────────────────────────────────────────────────────────
 class HeavyFighter(BaseEnemy):
     score_value = SCORE_LARGE_ENEMY
@@ -145,12 +172,7 @@ class HeavyFighter(BaseEnemy):
 
     def _build_image(self):
         w, h = 56, 52
-        s = pygame.Surface((w, h), pygame.SRCALPHA)
-        pygame.draw.polygon(s, (30, 120, 40), [(0, 30), (56, 30), (38, 46), (18, 46)])
-        pygame.draw.ellipse(s, (40, 150, 50), (18, 4, 20, 44))
-        pygame.draw.ellipse(s, (20, 60, 30), (22, 8, 12, 16))
-        pygame.draw.ellipse(s, (100, 255, 120, 160), (22, 44, 12, 6))
-        self.image = s
+        self.image = _get_enemy_img(w, h, color_main=(130, 50, 30))
 
     def _fire(self):
         from bullet.enemy_bullet import EnemyBullet, spawn_aimed
@@ -163,6 +185,105 @@ class HeavyFighter(BaseEnemy):
                         self._player_ref.rect.centerx,
                         self._player_ref.rect.centery,
                         self._bullet_group, speed=ENEMY_BULLET_SPEED - 1)
+
+
+# ─────────────────────────────────────────────────────────────
+#  Small Warship — scrolls upward on the sea
+# ─────────────────────────────────────────────────────────────
+def _build_warship_img(w, h, hull_col, deck_col):
+    s = pygame.Surface((w, h), pygame.SRCALPHA)
+    # Hull
+    hull_pts = [(4, h//3), (w-4, h//3), (w-2, h-4), (2, h-4)]
+    pygame.draw.polygon(s, hull_col, hull_pts)
+    # Deck
+    pygame.draw.rect(s, deck_col, (6, 4, w-12, h//3 + 4))
+    # Turret(s)
+    for tx in range(w//4, w, w//3):
+        pygame.draw.circle(s, (60, 60, 70), (tx, h//4), 6)
+        pygame.draw.rect(s, (45, 45, 55), (tx-2, 4, 4, h//4))
+    # Superstructure
+    pygame.draw.rect(s, (80, 85, 95), (w//2-8, 6, 16, h//4))
+    # Wake lines
+    for i in range(3):
+        pygame.draw.line(s, (100, 160, 220, 120),
+                         (2+i*4, h-3), (w//2, h+2), 1)
+        pygame.draw.line(s, (100, 160, 220, 120),
+                         (w-2-i*4, h-3), (w//2, h+2), 1)
+    return s
+
+
+class SmallWarship(BaseEnemy):
+    score_value = 200
+    hp_max      = 120
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self._shoot_rate = 90
+        self.drop_chance = 0.25
+
+    def _build_image(self):
+        w, h = 60, 40
+        self.image = _build_warship_img(w, h, (90, 100, 112), (70, 80, 92))
+
+    def _fire(self):
+        from bullet.enemy_bullet import EnemyBullet, spawn_aimed
+        if self._player_ref:
+            spawn_aimed(self.rect.centerx, self.rect.top,
+                        self._player_ref.rect.centerx,
+                        self._player_ref.rect.centery,
+                        self._bullet_group, speed=ENEMY_BULLET_SPEED - 1)
+        else:
+            self._bullet_group.add(EnemyBullet(self.rect.centerx, self.rect.top, vy=-ENEMY_BULLET_SPEED))
+
+
+class MediumWarship(BaseEnemy):
+    score_value = 350
+    hp_max      = 250
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self._shoot_rate = 65
+        self.drop_chance = 0.35
+
+    def _build_image(self):
+        w, h = 90, 55
+        self.image = _build_warship_img(w, h, (75, 85, 100), (55, 65, 80))
+
+    def _fire(self):
+        from bullet.enemy_bullet import EnemyBullet, spawn_aimed, spawn_spread
+        for dx in (-20, 0, 20):
+            self._bullet_group.add(
+                EnemyBullet(self.rect.centerx + dx, self.rect.top, vy=-ENEMY_BULLET_SPEED))
+        if self._player_ref:
+            spawn_aimed(self.rect.centerx, self.rect.top,
+                        self._player_ref.rect.centerx,
+                        self._player_ref.rect.centery,
+                        self._bullet_group, speed=ENEMY_BULLET_SPEED)
+
+
+class LargeWarship(BaseEnemy):
+    score_value = 500
+    hp_max      = 500
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self._shoot_rate = 50
+        self.drop_chance = 0.50
+
+    def _build_image(self):
+        w, h = 130, 75
+        self.image = _build_warship_img(w, h, (60, 70, 85), (42, 52, 68))
+
+    def _fire(self):
+        from bullet.enemy_bullet import EnemyBullet, spawn_aimed, spawn_spread
+        spawn_spread(self.rect.centerx, self.rect.top,
+                     self._bullet_group, count=5, speed=ENEMY_BULLET_SPEED - 1,
+                     offset=0)
+        if self._player_ref:
+            spawn_aimed(self.rect.centerx, self.rect.top,
+                        self._player_ref.rect.centerx,
+                        self._player_ref.rect.centery,
+                        self._bullet_group, speed=ENEMY_BULLET_SPEED + 1)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -253,6 +374,9 @@ ENEMY_CLASSES = {
     'MediumFighter': MediumFighter,
     'HeavyFighter':  HeavyFighter,
     'GroundTurret':  GroundTurret,
+    'SmallWarship':  SmallWarship,
+    'MediumWarship': MediumWarship,
+    'LargeWarship':  LargeWarship,
 }
 
 
