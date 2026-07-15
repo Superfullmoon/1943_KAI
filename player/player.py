@@ -56,6 +56,63 @@ def _build_player_surf():
     return s
 
 
+# ── Player aircraft surface (1943 Kai style Red Biplane) ───
+def _build_player_kai_biplane_surf():
+    w, h = 56, 64
+    s = pygame.Surface((w, h), pygame.SRCALPHA)
+
+    # ── Propeller (spinning effect) ──────────────────────────────
+    # Draw a faint light-gray oval at the very front
+    pygame.draw.ellipse(s, (220, 220, 220, 100), (w // 2 - 20, 2, 40, 10))
+    # Propeller blades
+    pygame.draw.line(s, (80, 80, 80), (w // 2 - 18, 7), (w // 2 + 18, 7), 2)
+    pygame.draw.circle(s, (255, 200, 30), (w // 2 - 18, 7), 2)
+    pygame.draw.circle(s, (255, 200, 30), (w // 2 + 18, 7), 2)
+
+    # ── Fuselage (Single Central Red Body) ──────────────────────
+    # Main fuselage
+    pygame.draw.ellipse(s, (200, 30, 30), (w // 2 - 8, 6, 16, 52))
+    # Highlights
+    pygame.draw.ellipse(s, (240, 70, 70), (w // 2 - 5, 8, 10, 44))
+
+    # ── Engine cowl (front yellow ring) ─────────────────────────
+    pygame.draw.ellipse(s, (255, 200, 30), (w // 2 - 7, 5, 14, 10))
+    pygame.draw.circle(s, (40, 40, 40), (w // 2, 8), 4)
+
+    # ── Double Wings (Biplane style - thick retro wings) ────────
+    # Top wing (large, red with yellow wingtips)
+    pygame.draw.rect(s, (200, 30, 30), (2, 20, w - 4, 14), border_radius=4)
+    # Yellow tips on top wing
+    pygame.draw.rect(s, (255, 200, 30), (2, 20, 8, 14), border_top_left_radius=4, border_bottom_left_radius=4)
+    pygame.draw.rect(s, (255, 200, 30), (w - 10, 20, 8, 14), border_top_right_radius=4, border_bottom_right_radius=4)
+    # Wing highlight
+    pygame.draw.rect(s, (240, 70, 70), (10, 22, w - 20, 4))
+
+    # ── Cockpit ──────────────────────────────────────────────────
+    pygame.draw.ellipse(s, (60, 120, 220), (w // 2 - 4, 18, 8, 14))
+    pygame.draw.ellipse(s, (140, 200, 255, 180), (w // 2 - 3, 20, 6, 9))
+
+    # ── Horizontal Stabilizers (Rear) ───────────────────────────
+    pygame.draw.polygon(s, (180, 20, 20), [
+        (w // 2 - 18, 52), (w // 2 + 18, 52),
+        (w // 2 + 14, 58), (w // 2 - 14, 58)
+    ])
+    # Yellow tips on stabilizers
+    pygame.draw.polygon(s, (255, 200, 30), [
+        (w // 2 - 18, 52), (w // 2 - 12, 52),
+        (w // 2 - 12, 58), (w // 2 - 14, 58)
+    ])
+    pygame.draw.polygon(s, (255, 200, 30), [
+        (w // 2 + 12, 52), (w // 2 + 18, 52),
+        (w // 2 + 14, 58), (w // 2 + 12, 58)
+    ])
+
+    # Vertical tail fin
+    pygame.draw.ellipse(s, (220, 40, 40), (w // 2 - 2, 48, 4, 14))
+
+    return s
+
+
 # ── Hit mask ─────────────────────────────────────────────────
 def _build_hit_surf():
     """Smaller inner rect for precise hit detection."""
@@ -68,7 +125,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x: int, y: int):
         super().__init__()
 
-        self._normal_surf    = _build_player_surf()
+        self._normal_surf    = _build_player_kai_biplane_surf()
         self._hit_surf       = _build_hit_surf()   # used for mask collision
         self.image           = self._normal_surf
         self.rect            = self.image.get_rect(center=(x, y))

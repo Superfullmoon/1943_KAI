@@ -31,7 +31,10 @@ STATE_GAME_CLEAR = "GAME_CLEAR"
 class Game:
     def __init__(self):
         pygame.init()
-        pygame.mixer.init()
+        try:
+            pygame.mixer.init()
+        except Exception:
+            pass
 
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption(TITLE)
@@ -133,17 +136,19 @@ class Game:
     def use_bomb(self):
         """메가크래시(폭탄)를 사용합니다."""
         if self.player and self.player.alive() and self.player.bomb_count > 0:
-            self.player.bomb_count -= 1
-            self.bomb_effect.activate()
-            self.sfx.play('bomb')
+            if self.player.energy.value > 15:
+                self.player.bomb_count -= 1
+                self.player.energy.recover(-15)   # consume 15 energy
+                self.bomb_effect.activate()
+                self.sfx.play('bomb')
 
-            # 화면에 있는 적 탄환 제거
-            self.stage_manager.enemy_bullet_group.empty()
+                # 화면에 있는 적 탄환 제거
+                self.stage_manager.enemy_bullet_group.empty()
 
-            # 화면에 있는 적들에게 데미지
-            for enemy in list(self.stage_manager.enemy_group):
-                # 보스 혹은 보스 컴포넌트 여부에 관계없이 모두 데미지
-                enemy.take_damage(BOMB_DAMAGE)
+                # 화면에 있는 적들에게 데미지
+                for enemy in list(self.stage_manager.enemy_group):
+                    # 보스 혹은 보스 컴포넌트 여부에 관계없이 모두 데미지
+                    enemy.take_damage(BOMB_DAMAGE)
 
     def advance_stage(self):
         """다음 스테이지로 진입하거나, 최종 클리어 판정합니다."""
