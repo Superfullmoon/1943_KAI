@@ -24,8 +24,16 @@ def check_all(player, player_bullets, enemy_group, enemy_bullets,
                                       pygame.sprite.collide_mask)
     for enemy, bullets in hits.items():
         for b in bullets:
+            if b.__class__.__name__ == 'LaserBeam':
+                if not hasattr(b, 'hit_enemies'):
+                    b.hit_enemies = set()
+                if enemy in b.hit_enemies:
+                    continue
+                b.hit_enemies.add(enemy)
+            else:
+                b.kill()
+
             killed = enemy.take_damage(b.damage)
-            b.kill()
             if killed:
                 result.score_gained += enemy.score_value
                 result.enemy_killed += 1
@@ -33,6 +41,14 @@ def check_all(player, player_bullets, enemy_group, enemy_bullets,
                                     'large' if enemy.score_value >= 300 else 'small')
                 sfx.play('explosion_small')
                 sfx.play('explosion_small')
+
+    # ── Shotgun Pellets ↔ Enemy Bullets (bullet cancellation) ──
+    shotgun_pellets = [b for b in player_bullets if b.__class__.__name__ == 'ShotgunPellet']
+    if shotgun_pellets and enemy_bullets:
+        temp_shotgun_group = pygame.sprite.Group(shotgun_pellets)
+        cancelled = pygame.sprite.groupcollide(temp_shotgun_group, enemy_bullets, True, True)
+        if cancelled:
+            sfx.play('boss_hit', volume=0.2)
 
     # ── Enemy bullets ↔ Player ─────────────────────────────────
     if player.alive() and not player.invincible:
@@ -59,6 +75,13 @@ def check_all(player, player_bullets, enemy_group, enemy_bullets,
             player.take_damage(40)
             result.player_hit = True
             sfx.play('player_hit')
+
+    # ── Player bullets ↔ Items (shoot to cycle item type) ──────
+    item_hits = pygame.sprite.groupcollide(item_group, player_bullets,
+                                           False, True)   # kill bullet, keep item
+    for item in item_hits:
+        item.cycle_type()
+        sfx.play('boss_hit', volume=0.4)
 
     # ── Items ↔ Player ─────────────────────────────────────────
     picked = pygame.sprite.spritecollide(player, item_group, True)

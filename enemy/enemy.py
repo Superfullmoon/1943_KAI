@@ -348,6 +348,21 @@ class PowerUpItem(pygame.sprite.Sprite):
         self._vy   = 2.5
         self._t    = 0
 
+    def cycle_type(self):
+        """Rotates to the next item type when shot."""
+        idx = (self.TYPES.index(self.item_type) + 1) % len(self.TYPES)
+        self.item_type = self.TYPES[idx]
+        col = self.COLOURS[self.item_type]
+
+        w = h = 22
+        self.image = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(self.image, (*col, 200), (w//2, h//2), w//2 - 1)
+        pygame.draw.circle(self.image, WHITE, (w//2, h//2), 5)
+        # Label letter
+        font = pygame.font.SysFont('Arial', 11, bold=True)
+        lbl  = font.render(self.item_type[0], True, (0, 0, 0))
+        self.image.blit(lbl, (w//2 - lbl.get_width()//2, h//2 - lbl.get_height()//2))
+
     def update(self):
         self._t     += 1
         self.rect.y += self._vy
