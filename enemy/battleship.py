@@ -8,7 +8,18 @@ from enemy.boss import BossBase, BossComponent
 
 
 import os
-from config import load_and_scale_sprite
+
+try:
+    from config import load_and_scale_sprite
+except ImportError:
+    def load_and_scale_sprite(path, target_w, target_h, colorkey='auto'):
+        try:
+            img = pygame.image.load(path).convert_alpha()
+            img = pygame.transform.smoothscale(img, (target_w, target_h))
+            return img
+        except Exception as e:
+            print("Failed to load sprite {}: {}".format(path, e))
+            return None
 
 _BATTLESHIP_IMG = None
 
