@@ -87,8 +87,16 @@ class Player(pygame.sprite.Sprite):
         self._shoot_cd       = 0
         self._blink          = False
 
+        # Launch / Takeoff sequence
+        self.launching       = True
+        self.launch_frame    = 0
+
     # ── Update ───────────────────────────────────────────────
     def update(self, keys, bullet_group):
+        if self.launching:
+            self._handle_launch()
+            return
+
         self._move(keys)
         self._handle_shoot(keys, bullet_group)
         self._tick_invincibility()
@@ -97,6 +105,46 @@ class Player(pygame.sprite.Sprite):
 
         if self._shoot_cd > 0:
             self._shoot_cd -= 1
+
+    # ── Launch/Takeoff Trajectory ────────────────────────────
+    def _handle_launch(self):
+        self.launch_frame += 1
+        self.invincible = True
+        self._inv_timer = 60  # Maintain invincibility during launch
+
+        total_launch_frames = 120
+        progress = self.launch_frame / total_launch_frames
+
+        if progress >= 1.0:
+            self.launching = False
+            self.invincible = True
+            self._inv_timer = 90  # Post-launch protection
+            self.image = self._normal_surf
+            cx, cy = self.rect.center
+            self.rect = self.image.get_rect(center=(cx, cy))
+            self.mask = pygame.mask.from_surface(self.image)
+            return
+
+        # Smooth scale
+        scale = 0.4 + 0.6 * progress
+        scaled_w = int(self._normal_surf.get_width() * scale)
+        scaled_h = int(self._normal_surf.get_height() * scale)
+        self.image = pygame.transform.smoothscale(self._normal_surf, (scaled_w, scaled_h))
+
+        # Flight path trajectory: start near bottom center, fly up high, then settle down
+        start_y = SCREEN_HEIGHT - 120
+        peak_y = SCREEN_HEIGHT - 280
+        end_y = SCREEN_HEIGHT - 150
+
+        if progress < 0.7:
+            p = progress / 0.7
+            current_y = start_y + (peak_y - start_y) * p
+        else:
+            p = (progress - 0.7) / 0.3
+            current_y = peak_y + (end_y - peak_y) * p
+
+        self.rect = self.image.get_rect(center=(SCREEN_WIDTH // 2, int(current_y)))
+        self.mask = pygame.mask.from_surface(self.image)
 
     # ── Movement ─────────────────────────────────────────────
     def _move(self, keys):

@@ -22,8 +22,8 @@ class Cloud(pygame.sprite.Sprite):
 
     def update(self):
         self.rect.y += self._speed
-        if self.rect.top > SCREEN_HEIGHT + 40:
-            self.rect.bottom = -40
+        if self.rect.top > SCREEN_HEIGHT + 250:
+            self.rect.bottom = -250
             self.rect.x = random.randint(0, SCREEN_WIDTH)
 
 
@@ -67,6 +67,44 @@ class Island(pygame.sprite.Sprite):
             self.kill()
 
 
+# ─── Friendly takeoff carrier ────────────────────────────────
+class FriendlyCarrier(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        w, h = 140, 450
+        self.image = pygame.Surface((w, h), pygame.SRCALPHA)
+        # Draw a beautiful grey aircraft carrier hull
+        # Angled bow (top)
+        pygame.draw.polygon(self.image, (80, 85, 95), [(w//2, 0), (5, 60), (w-5, 60)])
+        # Main deck hull
+        pygame.draw.rect(self.image, (80, 85, 95), (5, 60, w-10, h-80))
+        # Stern (bottom) slightly tapered
+        pygame.draw.polygon(self.image, (80, 85, 95), [(5, h-20), (w-5, h-20), (w//2, h)])
+
+        # Flight deck (darker grey runway)
+        pygame.draw.rect(self.image, (45, 50, 55), (15, 30, w-30, h-60))
+        # Angled runway stripes
+        pygame.draw.line(self.image, (220, 220, 220), (w//2, 30), (w//2, h-30), 2)
+        for y in range(50, h-50, 40):
+            pygame.draw.line(self.image, (240, 200, 10), (w//2 - 10, y), (w//2 + 10, y), 2)
+
+        # Island superstructure (right side)
+        pygame.draw.rect(self.image, (100, 105, 115), (w-25, h//2 - 50, 15, 70))
+        pygame.draw.rect(self.image, (60, 65, 75), (w-22, h//2 - 40, 10, 50))
+        # Small gun turrets on the sides of the carrier
+        for y in (80, 120, h-120, h-80):
+            pygame.draw.circle(self.image, (50, 50, 50), (10, y), 6)
+            pygame.draw.line(self.image, (30, 30, 30), (10, y), (2, y-3), 2)
+            pygame.draw.circle(self.image, (50, 50, 50), (w-10, y), 6)
+            pygame.draw.line(self.image, (30, 30, 30), (w-10, y), (w-2, y-3), 2)
+
+        self.rect = self.image.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 220))
+        self._speed = SCROLL_SPEED
+
+    def update(self):
+        self.rect.y += self._speed
+
+
 # ─── Stage base ──────────────────────────────────────────────
 class StageBase:
     """Manages the scrolling ocean background, island, and cloud layers."""
@@ -85,20 +123,23 @@ class StageBase:
         # Cloud layers (fluffy white clouds)
         self._clouds_back  = pygame.sprite.Group()
         self._clouds_front = pygame.sprite.Group()
-        for _ in range(6):
-            cw = random.randint(70, 130)
-            ch = random.randint(35, 65)
+        for _ in range(5):
+            cw = random.randint(200, 450)
+            ch = random.randint(100, 220)
             self._clouds_back.add(Cloud(
                 random.randint(0, SCREEN_WIDTH),
                 random.randint(-SCREEN_HEIGHT, SCREEN_HEIGHT),
-                cw, ch, speed=0.6, alpha=140))
+                cw, ch, speed=0.4, alpha=random.randint(60, 90)))
         for _ in range(4):
-            cw = random.randint(50, 100)
-            ch = random.randint(28, 50)
+            cw = random.randint(150, 300)
+            ch = random.randint(80, 150)
             self._clouds_front.add(Cloud(
                 random.randint(0, SCREEN_WIDTH),
                 random.randint(-SCREEN_HEIGHT, SCREEN_HEIGHT),
-                cw, ch, speed=1.4, alpha=210))
+                cw, ch, speed=1.0, alpha=random.randint(90, 115)))
+
+        # Spawn friendly takeoff carrier at the start of the stage
+        self.friendly_carrier = FriendlyCarrier()
 
         # Islands (scroll with the background)
         self._islands = pygame.sprite.Group()
@@ -161,6 +202,11 @@ class StageBase:
         self._clouds_front.update()
         self._islands.update()
 
+        if self.friendly_carrier:
+            self.friendly_carrier.update()
+            if self.friendly_carrier.rect.top > SCREEN_HEIGHT + 100:
+                self.friendly_carrier = None
+
         # Periodically spawn islands
         self._island_timer += 1
         if self._island_timer >= self._island_interval:
@@ -177,6 +223,10 @@ class StageBase:
 
         # Islands (behind clouds, behind sprites)
         self._islands.draw(surface)
+
+        # Draw Friendly Takeoff Carrier (above islands/sea but below sprites and clouds)
+        if self.friendly_carrier:
+            surface.blit(self.friendly_carrier.image, self.friendly_carrier.rect)
 
         # Back clouds (thin, far away)
         self._clouds_back.draw(surface)

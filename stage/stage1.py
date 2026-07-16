@@ -1,5 +1,5 @@
 # ============================================================
-#  stage/stage1.py  —  Pacific Ocean (tutorial-friendly)
+#  stage/stage1.py  —  Pacific Ocean (Extended Timeline)
 # ============================================================
 
 #  Wave format:
@@ -9,46 +9,52 @@
 #  x_gap  : pixel gap between enemies in a group
 
 WAVES = [
-    # ── Opening formation ──────────────────────────────────────
-    (90,  'SmallFighter', 160, 'dive_left',  {}, 3, 70),
-    (150, 'SmallFighter', 480, 'dive_right', {}, 3, -70),
-    (240, 'SmallFighter', 320, 'straight',   {}, 1, 0),
+    # ── Opening (0s - 10s) ───────────────────────────────────
+    (90,   'SmallFighter', 160, 'dive_left',  {}, 3, 70),
+    (180,  'SmallFighter', 480, 'dive_right', {}, 3, -70),
+    (300,  'SmallFighter', 320, 'straight',   {}, 1, 0),
+    (420,  'SmallFighter', 100, 'zigzag',     {}, 2, 80),
+    (420,  'SmallFighter', 500, 'zigzag',     {}, 2, -80),
+    (540,  'SmallWarship', 160, 'straight',   {}, 1, 0),
+    (540,  'SmallWarship', 480, 'straight',   {}, 1, 0),
 
-    # ── Second wave ───────────────────────────────────────────
-    (360, 'SmallFighter', 100, 'zigzag',     {}, 2, 80),
-    (360, 'SmallFighter', 500, 'zigzag',     {}, 2, -80),
+    # ── Mid-opening (10s - 20s) ──────────────────────────────
+    (680,  'MediumFighter', 200, 'straight',  {}, 1, 0),
+    (680,  'MediumFighter', 440, 'straight',  {}, 1, 0),
+    (800,  'MediumWarship', 320, 'straight',  {}, 1, 0),
+    (920,  'SmallFighter', 320, 'kamikaze',   {}, 4, 60),
+    (1060, 'MediumFighter', 160, 'dive_left',  {}, 2, 80),
+    (1060, 'SmallFighter',  480, 'dive_right', {}, 3, -55),
 
-    # ── Small warship formation ──────────────────────────────
-    (480, 'SmallWarship', 160, 'straight',   {}, 1, 0),
-    (480, 'SmallWarship', 480, 'straight',   {}, 1, 0),
+    # ── Long Warship 1 (20s - 30s) ───────────────────────────
+    (1240, 'HeavyFighter', 320, 'straight',   {}, 1, 0),
+    (1400, 'LongWarship',  320, 'straight',   {}, 1, 0),   # First Long Warship!
+    (1560, 'SmallFighter', 100, 'zigzag',     {}, 3, 60),
+    (1560, 'SmallFighter', 540, 'zigzag',     {}, 3, -60),
 
-    # ── Medium fighter appears ────────────────────────────────
-    (600, 'MediumFighter', 200, 'straight',  {}, 1, 0),
-    (600, 'MediumFighter', 440, 'straight',  {}, 1, 0),
+    # ── Mid-Stage Climax (30s - 40s) ─────────────────────────
+    (1780, 'LargeWarship', 320, 'straight',   {}, 1, 0),
+    (1920, 'MediumFighter', 200, 'zigzag',     {}, 2, 100),
+    (2060, 'SmallWarship', 120, 'straight',   {}, 1, 0),
+    (2060, 'SmallWarship', 520, 'straight',   {}, 1, 0),
+    (2200, 'HeavyFighter', 220, 'dive_left',  {}, 1, 0),
+    (2200, 'HeavyFighter', 420, 'dive_right', {}, 1, 0),
 
-    # ── Medium warship ────────────────────────────────────────
-    (720, 'MediumWarship', 320, 'straight',  {}, 1, 0),
+    # ── Long Warship 2 & Turrets (40s - 50s) ─────────────────
+    (2400, 'GroundTurret', 150, 'stationary', {}, 1, 0),
+    (2400, 'GroundTurret', 490, 'stationary', {}, 1, 0),
+    (2550, 'SmallFighter', 320, 'kamikaze',   {}, 5, 50),
+    (2700, 'LongWarship',  320, 'straight',   {}, 1, 0),   # Second Long Warship!
+    (2850, 'MediumWarship', 200, 'straight',  {}, 1, 0),
+    (2850, 'MediumWarship', 440, 'straight',  {}, 1, 0),
 
-    # ── Kamikaze pack ─────────────────────────────────────────
-    (840, 'SmallFighter', 320, 'kamikaze',   {}, 4, 60),
+    # ── Climax Pre-Boss Wave (50s - 60s) ─────────────────────
+    (3050, 'HeavyFighter', 320, 'circle_then_exit', {}, 1, 0),
+    (3180, 'SmallFighter', 100, 'zigzag',     {}, 3, 80),
+    (3180, 'SmallFighter', 540, 'zigzag',     {}, 3, -80),
+    (3300, 'MediumFighter', 320, 'straight',  {}, 2, 120),
+    (3420, 'SmallFighter', 320, 'kamikaze',   {}, 4, 60),
 
-    # ── Mixed wave ────────────────────────────────────────────
-    (960, 'MediumFighter', 160, 'dive_left',  {}, 2, 80),
-    (960, 'SmallFighter',  480, 'dive_right', {}, 3, -55),
-
-    # ── Heavy fighter + warships ──────────────────────────────
-    (1080, 'HeavyFighter', 320, 'straight',  {}, 1, 0),
-    (1080, 'SmallWarship', 120, 'straight',  {}, 1, 0),
-    (1080, 'SmallWarship', 520, 'straight',  {}, 1, 0),
-
-    # ── Large warship ─────────────────────────────────────────
-    (1200, 'LargeWarship', 320, 'straight',  {}, 1, 0),
-
-    # ── Pre-boss wave ─────────────────────────────────────────
-    (1320, 'SmallFighter', 100, 'zigzag',    {}, 2, 80),
-    (1320, 'SmallFighter', 540, 'zigzag',    {}, 2, -80),
-    (1380, 'MediumFighter', 320, 'straight', {}, 2, 100),
-
-    # ── BOSS ──────────────────────────────────────────────────
-    (1560, 'BOSS', 320, '', {}, 1, 0),
+    # ── BOSS (60s / 3600 frames) ─────────────────────────────
+    (3600, 'BOSS', 320, '', {}, 1, 0),
 ]
