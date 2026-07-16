@@ -1,6 +1,13 @@
 # ============================================================
 #  config.py  —  1943 KAI  Global Constants
 # ============================================================
+import pygame
+
+# ── Control Keys ─────────────────────────────────────────────
+KEY_SHOOT = pygame.K_z
+KEY_BOMB  = pygame.K_x
+KEY_START = pygame.K_RETURN
+KEY_PAUSE = pygame.K_ESCAPE
 
 # ── Screen ───────────────────────────────────────────────────
 SCREEN_WIDTH  = 640
@@ -100,12 +107,6 @@ STAGE_THEMES = {
    10:  {'sky_top': ( 20,   5,   5), 'sky_bot': ( 48,  14,   8),
          'sea':     ( 28,   8,   5), 'name': "Stage 10 — Enemy Stronghold"},
 }
-
-import pygame
-KEY_SHOOT = pygame.K_z
-KEY_BOMB  = pygame.K_x
-KEY_START = pygame.K_RETURN
-KEY_PAUSE = pygame.K_ESCAPE
 
 def load_and_scale_sprite(path, target_w, target_h, colorkey='auto'):
     try:
