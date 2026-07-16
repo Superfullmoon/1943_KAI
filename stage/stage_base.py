@@ -8,15 +8,26 @@ from config import (SCREEN_WIDTH, SCREEN_HEIGHT, SCROLL_SPEED,
 
 # ─── Cloud sprite ────────────────────────────────────────────
 class Cloud(pygame.sprite.Sprite):
-    def __init__(self, x, y, w, h, speed, alpha=200):
+    def __init__(self, x, y, w, h, speed, alpha=100):
         super().__init__()
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
-        # Draw a fluffy cloud from overlapping ellipses
-        col = (255, 255, 255, alpha)
-        pygame.draw.ellipse(self.image, col, (0,      h//3,   w,     h*2//3))
-        pygame.draw.ellipse(self.image, col, (w//6,   0,      w*2//3, h*2//3))
-        pygame.draw.ellipse(self.image, col, (w//2,   h//4,  w//3,  h//2))
-        pygame.draw.ellipse(self.image, col, (0,      h//4,  w//3,  h//2))
+
+        # 3D shaded cloud using base grey shadow and offset white highlights
+        shadow_col = (180, 185, 200, alpha)
+        white_col  = (255, 255, 255, alpha)
+
+        # 1. Shadow Base (Grey)
+        pygame.draw.ellipse(self.image, shadow_col, (4,      h//3,   w-8,     h*2//3 - 4))
+        pygame.draw.ellipse(self.image, shadow_col, (w//6+2, 2,      w*2//3 - 4, h*2//3 - 4))
+        pygame.draw.ellipse(self.image, shadow_col, (w//2,   h//4,   w//3 - 2,  h//2 - 2))
+        pygame.draw.ellipse(self.image, shadow_col, (2,      h//4,   w//3 - 2,  h//2 - 2))
+
+        # 2. Highlight Layer (White, shifted up & left)
+        pygame.draw.ellipse(self.image, white_col, (1,      h//3 - 3,   w-8,     h*2//3 - 4))
+        pygame.draw.ellipse(self.image, white_col, (w//6 - 1, 0,        w*2//3 - 4, h*2//3 - 4))
+        pygame.draw.ellipse(self.image, white_col, (w//2 - 2, h//4 - 2,   w//3 - 2,  h//2 - 2))
+        pygame.draw.ellipse(self.image, white_col, (0,      h//4 - 2,   w//3 - 2,  h//2 - 2))
+
         self.rect   = self.image.get_rect(center=(x, y))
         self._speed = speed
 
@@ -35,28 +46,34 @@ class Island(pygame.sprite.Sprite):
         h = int(size * 0.65)
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
 
-        # Sandy beach base
-        beach_col = (210, 185, 120)
-        pygame.draw.ellipse(self.image, beach_col, (0, h//3, w, h*2//3))
+        # 1. Sandy Shoreline Beach Base (pale yellow sand)
+        beach_col = (235, 215, 150)
+        pygame.draw.ellipse(self.image, beach_col, (0, 0, w, h))
 
-        # Grass/jungle interior
-        jungle_col = (60, 130, 60)
-        inner_w = int(w * 0.65)
-        inner_h = int(h * 0.55)
-        pygame.draw.ellipse(self.image, jungle_col,
-                            ((w - inner_w)//2, h//4, inner_w, inner_h))
+        # 2. Shallow coastal water ring outline (turquoise reef)
+        reef_col = (40, 180, 170)
+        pygame.draw.ellipse(self.image, reef_col, (4, 4, w-8, h-8), 2)
 
-        # Highlight shimmer
-        pygame.draw.ellipse(self.image, (80, 160, 80),
-                            ((w - inner_w//2)//2, h//3, inner_w//2, inner_h//2))
+        # 3. Dense jungle interior (dark green vegetation base)
+        jungle_dark = (30, 95, 45)
+        inner_w = int(w * 0.75)
+        inner_h = int(h * 0.75)
+        pygame.draw.ellipse(self.image, jungle_dark,
+                            ((w - inner_w)//2, (h - inner_h)//2, inner_w, inner_h))
 
-        # Optional palm tree silhouette
-        if size > 50:
-            trunk_x = w // 2
-            pygame.draw.line(self.image, (100, 70, 30),
-                             (trunk_x, h//4 + 4), (trunk_x, h//4 - 10), 3)
-            pygame.draw.ellipse(self.image, (40, 110, 40),
-                                (trunk_x - 10, h//4 - 18, 20, 12))
+        # 4. Lush vegetation highlights (lighter green canopy)
+        jungle_light = (60, 165, 80)
+        canopy_w = int(w * 0.5)
+        canopy_h = int(h * 0.5)
+        pygame.draw.ellipse(self.image, jungle_light,
+                            ((w - canopy_w)//2, (h - canopy_h)//2 - 2, canopy_w, canopy_h))
+
+        # 5. Peak forest highlight (bright yellow-green canopy top)
+        peak_col = (110, 205, 90)
+        peak_w = int(w * 0.25)
+        peak_h = int(h * 0.25)
+        pygame.draw.ellipse(self.image, peak_col,
+                            ((w - peak_w)//2 - 2, (h - peak_h)//2 - 4, peak_w, peak_h))
 
         self.rect   = self.image.get_rect(center=(x, y))
         self._speed = speed
@@ -181,13 +198,15 @@ class StageBase:
         else:
             sc = self._sea_col
             pygame.draw.rect(s, sc, (0, sky_h, SCREEN_WIDTH, sea_h))
-            # Subtle wave streaks
-            for i in range(40):
-                wy = sky_h + random.randint(0, sea_h - 4)
-                wl = random.randint(30, 100)
+            # Bright wave streaks (retro wave pattern for authentic 1987 arcade feel)
+            for i in range(60):
+                wy = sky_h + random.randint(0, sea_h - 10)
+                wl = random.randint(15, 35)  # Shorter, clearer segments
                 wx = random.randint(0, SCREEN_WIDTH - wl)
-                bright = (min(255, sc[0]+55), min(255, sc[1]+55), min(255, sc[2]+45))
-                pygame.draw.line(s, bright, (wx, wy), (wx + wl, wy), 1)
+                wave_col = (min(255, sc[0] + 60), min(255, sc[1] + 70), min(255, sc[2] + 80))
+                # Draw retro-style stepped dash wave patterns
+                pygame.draw.line(s, wave_col, (wx, wy), (wx + wl, wy), 2)
+                pygame.draw.line(s, wave_col, (wx + wl//3, wy + 2), (wx + wl*2//3, wy + 2), 1)
 
         return s
 

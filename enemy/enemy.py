@@ -213,23 +213,72 @@ class HeavyFighter(BaseEnemy):
 # ─────────────────────────────────────────────────────────────
 def _build_warship_img(w, h, hull_col, deck_col):
     s = pygame.Surface((w, h), pygame.SRCALPHA)
-    # Hull
-    hull_pts = [(4, h//3), (w-4, h//3), (w-2, h-4), (2, h-4)]
+    cx = w // 2
+
+    # 1. Outer Hull (Grey) - pointed bow at the top, tapered stern at the bottom
+    hull_pts = [
+        (cx, 0),                       # Bow tip
+        (w - 2, h // 5),               # Upper right
+        (w - 2, h - h // 8),           # Lower right
+        (cx + w // 4, h),              # Bottom right stern
+        (cx - w // 4, h),              # Bottom left stern
+        (2, h - h // 8),               # Lower left
+        (2, h // 5),                   # Upper left
+    ]
     pygame.draw.polygon(s, hull_col, hull_pts)
-    # Deck
-    pygame.draw.rect(s, deck_col, (6, 4, w-12, h//3 + 4))
-    # Turret(s)
-    for tx in range(w//4, w, w//3):
-        pygame.draw.circle(s, (60, 60, 70), (tx, h//4), 6)
-        pygame.draw.rect(s, (45, 45, 55), (tx-2, 4, 4, h//4))
-    # Superstructure
-    pygame.draw.rect(s, (80, 85, 95), (w//2-8, 6, 16, h//4))
-    # Wake lines
+    pygame.draw.polygon(s, (40, 42, 50), hull_pts, 2)
+
+    # 2. Flight / Gun Deck (wooden brown or darker grey deck inside hull)
+    deck_pts = [
+        (cx, 4),
+        (w - 5, h // 5 + 2),
+        (w - 5, h - h // 8 - 2),
+        (cx + w // 4 - 3, h - 3),
+        (cx - w // 4 + 3, h - 3),
+        (5, h - h // 8 - 2),
+        (5, h // 5 + 2),
+    ]
+    pygame.draw.polygon(s, deck_col, deck_pts)
+
+    # 3. Superstructure / Bridge (command deck in the middle)
+    bridge_y = h // 2 - h // 10
+    bridge_h = h // 5
+    bridge_w = int(w * 0.55)
+    # Layer 1: lower bridge base
+    pygame.draw.rect(s, (100, 105, 115), (cx - bridge_w//2, bridge_y, bridge_w, bridge_h))
+    pygame.draw.rect(s, (30, 32, 40), (cx - bridge_w//2, bridge_y, bridge_w, bridge_h), 1)
+
+    # Layer 2: upper command tower with windows
+    win_w = int(bridge_w * 0.7)
+    win_h = max(4, h // 12)
+    pygame.draw.rect(s, (120, 125, 135), (cx - win_w//2, bridge_y + 4, win_w, win_h))
+    pygame.draw.rect(s, (30, 100, 160), (cx - win_w//3, bridge_y + 5, win_w//2 + 2, max(2, win_h - 4))) # Blue window stripe
+
+    # Smokestack (on top of bridge)
+    pygame.draw.ellipse(s, (50, 52, 58), (cx - 4, bridge_y + bridge_h - 8, 8, 10))
+    pygame.draw.circle(s, (20, 20, 22), (cx, bridge_y + bridge_h - 3), 2)
+
+    # 4. Center-line Main Gun Turrets
+    turret_positions = []
+    if h >= 130:
+        turret_positions = [h // 6, h // 3 - 10, h - h // 5]
+    elif h >= 90:
+        turret_positions = [h // 4 - 5, h - h // 4]
+    else:
+        turret_positions = [h // 3]
+
+    for ty in turret_positions:
+        # Turret base circle
+        pygame.draw.circle(s, (50, 52, 60), (cx, ty), max(4, w // 4))
+        pygame.draw.circle(s, (30, 32, 40), (cx, ty), max(4, w // 4), 1)
+        # Gun barrel pointing upward
+        pygame.draw.rect(s, (30, 30, 35), (cx - 1, ty - max(6, w // 3), 2, max(6, w // 3)))
+
+    # 5. Rear Propulsion Wake Lines (White foaming waves at stern)
     for i in range(3):
-        pygame.draw.line(s, (100, 160, 220, 120),
-                         (2+i*4, h-3), (w//2, h+2), 1)
-        pygame.draw.line(s, (100, 160, 220, 120),
-                         (w-2-i*4, h-3), (w//2, h+2), 1)
+        wy = h - 2 + i * 3
+        pygame.draw.line(s, (230, 240, 255, 150), (cx - w//4 + i*2, wy), (cx + w//4 - i*2, wy), 1)
+
     return s
 
 
@@ -243,8 +292,8 @@ class SmallWarship(BaseEnemy):
         self.drop_chance = 0.25
 
     def _build_image(self):
-        w, h = 60, 40
-        self.image = _build_warship_img(w, h, (90, 100, 112), (70, 80, 92))
+        w, h = 32, 70
+        self.image = _build_warship_img(w, h, (100, 105, 115), (75, 80, 90))
 
     def _fire(self):
         from bullet.enemy_bullet import EnemyBullet, spawn_aimed
@@ -267,8 +316,8 @@ class MediumWarship(BaseEnemy):
         self.drop_chance = 0.35
 
     def _build_image(self):
-        w, h = 90, 55
-        self.image = _build_warship_img(w, h, (75, 85, 100), (55, 65, 80))
+        w, h = 44, 100
+        self.image = _build_warship_img(w, h, (90, 95, 105), (65, 70, 80))
 
     def _fire(self):
         from bullet.enemy_bullet import EnemyBullet, spawn_aimed, spawn_spread
@@ -292,8 +341,8 @@ class LargeWarship(BaseEnemy):
         self.drop_chance = 0.50
 
     def _build_image(self):
-        w, h = 130, 75
-        self.image = _build_warship_img(w, h, (60, 70, 85), (42, 52, 68))
+        w, h = 56, 140
+        self.image = _build_warship_img(w, h, (80, 85, 95), (55, 60, 70))
 
     def _fire(self):
         from bullet.enemy_bullet import EnemyBullet, spawn_aimed, spawn_spread
@@ -320,32 +369,64 @@ class LongWarship(BaseEnemy):
         self.drop_chance = 0.60
 
     def _build_image(self):
-        w, h = 180, 50
+        w, h = 48, 190
+        # Let's draw an extremely detailed long WWII battleship!
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
-        hull_col = (50, 60, 75)
-        deck_col = (35, 45, 55)
+        cx = w // 2
 
-        # Hull
-        hull_pts = [(10, h//3), (w-10, h//3), (w-5, h-4), (5, h-4)]
-        pygame.draw.polygon(self.image, hull_col, hull_pts)
-        # Deck
-        pygame.draw.rect(self.image, deck_col, (15, 4, w-30, h//3 + 4))
+        # 1. Outer Hull (Grey) with pointed bow and stern
+        hull_pts = [
+            (cx, 0),
+            (w - 2, h // 8),
+            (w - 2, h - h // 12),
+            (cx + w // 4, h),
+            (cx - w // 4, h),
+            (2, h - h // 12),
+            (2, h // 8),
+        ]
+        pygame.draw.polygon(self.image, (70, 75, 85), hull_pts)
+        pygame.draw.polygon(self.image, (30, 32, 40), hull_pts, 2)
 
-        # 4 Turrets
-        for tx in (35, 75, 115, 155):
-            pygame.draw.circle(self.image, (40, 40, 50), (tx, h//4), 8)
-            pygame.draw.rect(self.image, (30, 30, 40), (tx-2, 2, 4, h//4))
+        # 2. Deck (wooden tan/brown color)
+        deck_pts = [
+            (cx, 4),
+            (w - 5, h // 8 + 2),
+            (w - 5, h - h // 12 - 2),
+            (cx + w // 4 - 3, h - 3),
+            (cx - w // 4 + 3, h - 3),
+            (5, h - h // 12 - 2),
+            (5, h // 8 + 2),
+        ]
+        pygame.draw.polygon(self.image, (135, 115, 95), deck_pts)
 
-        # Superstructure
-        pygame.draw.rect(self.image, (70, 75, 85), (w//2-20, 6, 40, h//4))
-        pygame.draw.rect(self.image, (100, 105, 115), (w//2-10, 2, 20, h//4 - 2))
+        # 3. Massive tiered superstructure / Command bridge (midship)
+        bridge_y = h // 2 - 25
+        bridge_h = 45
+        # Tier 1
+        pygame.draw.rect(self.image, (90, 95, 105), (cx - 15, bridge_y, 30, bridge_h))
+        pygame.draw.rect(self.image, (30, 32, 40), (cx - 15, bridge_y, 30, bridge_h), 1)
+        # Tier 2 (upper command deck)
+        pygame.draw.rect(self.image, (110, 115, 125), (cx - 10, bridge_y + 8, 20, 20))
+        # Blue command windows
+        pygame.draw.rect(self.image, (30, 100, 180), (cx - 7, bridge_y + 12, 14, 4))
+        # Smokestacks
+        pygame.draw.ellipse(self.image, (45, 45, 50), (cx - 4, bridge_y + 30, 8, 12))
+        pygame.draw.circle(self.image, (15, 15, 18), (cx, bridge_y + 36), 3)
 
-        # Wake lines
-        for i in range(5):
-            pygame.draw.line(self.image, (120, 180, 240, 140),
-                             (4+i*6, h-3), (w//2, h+2), 1)
-            pygame.draw.line(self.image, (120, 180, 240, 140),
-                             (w-4-i*6, h-3), (w//2, h+2), 1)
+        # 4. Center-line Dual Main Gun Turrets (4 in total: 2 at bow, 2 at stern)
+        turrets_y = [h // 6, h // 3, h - h // 4, h - h // 8]
+        for ty in turrets_y:
+            # Turret base circle
+            pygame.draw.circle(self.image, (50, 52, 60), (cx, ty), 10)
+            pygame.draw.circle(self.image, (25, 25, 30), (cx, ty), 10, 1)
+            # Dual barrels pointing upward
+            pygame.draw.rect(self.image, (20, 20, 25), (cx - 3, ty - 14, 2, 14))
+            pygame.draw.rect(self.image, (20, 20, 25), (cx + 1, ty - 14, 2, 14))
+
+        # 5. Stern wake
+        for i in range(4):
+            wy = h - 2 + i * 3
+            pygame.draw.line(self.image, (230, 240, 255, 160), (cx - 10 + i, wy), (cx + 10 - i, wy), 1)
 
     def _fire(self):
         from bullet.enemy_bullet import EnemyBullet, spawn_aimed, spawn_spread
