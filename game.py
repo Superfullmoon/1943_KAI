@@ -88,6 +88,7 @@ class Game:
         self.score = 0
         self.player = Player(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 100)
         self.stage_manager = StageManager(self.player, self.sfx)
+        self.stage_manager.explosion_manager = self.explosion_manager
         self.energy_bar = EnergyBar(self.player)
         self.score_display.update(self.score, self.highscore)
 

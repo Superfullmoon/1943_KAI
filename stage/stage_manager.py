@@ -27,6 +27,9 @@ class StageManager:
         self._boss_sprite = None
         self._boss_components = pygame.sprite.Group()
         self._stage_clear_flag = False
+        self.explosion_manager = None
+        self._boss_dead_delay = 0
+        self._boss_last_center = (0, 0)
 
         self._frame        = 0
         self._waves        = []
@@ -44,6 +47,8 @@ class StageManager:
         self._frame       = 0
         self._boss_sprite = None
         self._stage_clear_flag = False
+        self._boss_dead_delay = 0
+        self._boss_last_center = (0, 0)
         self.enemy_group.empty()
         self.enemy_bullet_group.empty()
         self.player_bullet_group.empty()
@@ -78,7 +83,25 @@ class StageManager:
                 self._score_pending += self._boss_sprite.score_value
                 for c in list(self._boss_components):
                     c.kill()
+                # Save last position and set delay for epic explosion chain sequence!
+                self._boss_last_center = self._boss_sprite.rect.center
                 self._boss_sprite = None
+                self._boss_dead_delay = 120  # 2 seconds delay
+
+        # Run the epic explosion sequence and check clear timing
+        if self._boss_dead_delay > 0:
+            self._boss_dead_delay -= 1
+            if self._boss_dead_delay % 10 == 0:
+                if self.explosion_manager:
+                    ox = random.randint(-65, 65)
+                    oy = random.randint(-45, 45)
+                    self.explosion_manager.spawn(
+                        self._boss_last_center[0] + ox,
+                        self._boss_last_center[1] + oy,
+                        'large' if random.random() < 0.7 else 'huge'
+                    )
+                    self._sfx.play('explosion_large' if random.random() < 0.5 else 'explosion_small')
+            if self._boss_dead_delay <= 0:
                 self._stage_clear_flag = True
 
         return self._score_pending

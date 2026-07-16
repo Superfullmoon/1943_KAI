@@ -203,6 +203,9 @@ class Player(pygame.sprite.Sprite):
         surface.blit(self.image, self.rect)
         self.options.draw(surface)
 
+    def alive(self) -> bool:
+        return self.lives > 0
+
     # ── Properties ───────────────────────────────────────────
     @property
     def energy_value(self) -> float:
