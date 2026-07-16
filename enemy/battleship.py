@@ -8,7 +8,18 @@ from enemy.boss import BossBase, BossComponent
 
 
 import os
-from config import load_and_scale_sprite
+
+try:
+    from config import load_and_scale_sprite
+except ImportError:
+    def load_and_scale_sprite(path, target_w, target_h, colorkey='auto'):
+        try:
+            img = pygame.image.load(path).convert_alpha()
+            img = pygame.transform.smoothscale(img, (target_w, target_h))
+            return img
+        except Exception as e:
+            print("Failed to load sprite {}: {}".format(path, e))
+            return None
 
 _BATTLESHIP_IMG = None
 
@@ -74,7 +85,7 @@ class Cruiser(BossBase):
 #  Carrier  (Stage 3 boss — wider, lower profile)
 # ─────────────────────────────────────────────────────────────
 class Carrier(BossBase):
-    hp_max      = 1200
+    hp_max      = 1500
     score_value = SCORE_BOSS
 
     def _build_image(self):
@@ -87,6 +98,45 @@ class Carrier(BossBase):
                              (30, 15 + i * 10), (210, 15 + i * 10), 1)
         # Island superstructure (right side)
         pygame.draw.rect(self.image, (55, 65, 75), (w - 55, 5, 40, 45))
+
+    def _setup_components(self):
+        # Center big cannon (larger radius)
+        c_center = BossComponent(self, 0, 10, hp=400, colour=(180, 50, 50), radius=20)
+        # Side small cannons
+        c_left = BossComponent(self, -70, -10, hp=200, colour=(110, 120, 130), radius=12)
+        c_right = BossComponent(self, 70, -10, hp=200, colour=(110, 120, 130), radius=12)
+        self.components.extend([c_center, c_left, c_right])
+
+    def _fire(self):
+        from bullet.enemy_bullet import EnemyBullet, spawn_aimed, spawn_spread
+        from config import ENEMY_BULLET_SPEED
+
+        # Check which components are alive
+        center_alive = any(c.offset_x == 0 for c in self.components if not getattr(c, '_destroyed', False))
+        left_alive = any(c.offset_x < 0 for c in self.components if not getattr(c, '_destroyed', False))
+        right_alive = any(c.offset_x > 0 for c in self.components if not getattr(c, '_destroyed', False))
+
+        if center_alive:
+            # Center big cannon fires a spread of bullets
+            spawn_spread(self.rect.centerx, self.rect.centery + 10,
+                         self._bullet_group, count=8 + self._phase * 2, speed=ENEMY_BULLET_SPEED - 1,
+                         offset=self._t * 3)
+        if left_alive and self._player_ref:
+            # Left small cannon fires aimed bullet
+            spawn_aimed(self.rect.centerx - 70, self.rect.centery - 10,
+                        self._player_ref.rect.centerx, self._player_ref.rect.centery,
+                        self._bullet_group, speed=ENEMY_BULLET_SPEED)
+        if right_alive and self._player_ref:
+            # Right small cannon fires aimed bullet
+            spawn_aimed(self.rect.centerx + 70, self.rect.centery - 10,
+                        self._player_ref.rect.centerx, self._player_ref.rect.centery,
+                        self._bullet_group, speed=ENEMY_BULLET_SPEED)
+
+        # Base ship body shoots in phase 3
+        if self._phase >= 3 and self._player_ref:
+            spawn_aimed(self.rect.centerx, self.rect.bottom,
+                        self._player_ref.rect.centerx, self._player_ref.rect.centery,
+                        self._bullet_group, speed=ENEMY_BULLET_SPEED + 2)
 
 
 # ─────────────────────────────────────────────────────────────

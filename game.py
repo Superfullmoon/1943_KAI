@@ -151,6 +151,8 @@ class Game:
             self.stage_manager.next_stage()
             # 다음 스테이지 가기 전에 플레이어 라이프 및 에너지를 일부 혹은 전부 복구
             self.player.energy.full_restore()
+            self.player.launching = True
+            self.player.launch_frame = 0
             self.state = STATE_PLAYING
             self.bgm.play_stage(self.stage_manager.current_stage_num)
         else:

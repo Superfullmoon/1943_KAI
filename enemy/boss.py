@@ -75,6 +75,9 @@ class BossBase(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(x, y))
         self.mask = pygame.mask.from_surface(self.image)
 
+        if hasattr(self, '_setup_components'):
+            self._setup_components()
+
     def _build_image(self):
         """Subclasses override."""
         w, h = 160, 80
