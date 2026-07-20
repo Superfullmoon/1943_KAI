@@ -82,23 +82,23 @@ class StageBase:
         # Pre-render a tall background strip (2× screen height for seamless wrap)
         self._bg = self._make_bg()
 
-        # Cloud layers (fluffy white clouds)
+        # Cloud layers (dense, fluffy white clouds spread widely like original 1943)
         self._clouds_back  = pygame.sprite.Group()
         self._clouds_front = pygame.sprite.Group()
-        for _ in range(6):
-            cw = random.randint(70, 130)
-            ch = random.randint(35, 65)
+        for _ in range(12):
+            cw = random.randint(80, 180)
+            ch = random.randint(40, 90)
             self._clouds_back.add(Cloud(
-                random.randint(0, SCREEN_WIDTH),
+                random.randint(-40, SCREEN_WIDTH + 40),
                 random.randint(-SCREEN_HEIGHT, SCREEN_HEIGHT),
-                cw, ch, speed=0.6, alpha=140))
-        for _ in range(4):
-            cw = random.randint(50, 100)
-            ch = random.randint(28, 50)
+                cw, ch, speed=0.5 + random.random() * 0.3, alpha=random.randint(100, 150)))
+        for _ in range(8):
+            cw = random.randint(60, 130)
+            ch = random.randint(30, 65)
             self._clouds_front.add(Cloud(
-                random.randint(0, SCREEN_WIDTH),
+                random.randint(-30, SCREEN_WIDTH + 30),
                 random.randint(-SCREEN_HEIGHT, SCREEN_HEIGHT),
-                cw, ch, speed=1.4, alpha=210))
+                cw, ch, speed=1.2 + random.random() * 0.5, alpha=random.randint(170, 220)))
 
         # Islands (scroll with the background)
         self._islands = pygame.sprite.Group()

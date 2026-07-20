@@ -60,6 +60,8 @@ class Game:
         self.player = None
         self.stage_manager = None
         self.energy_bar = None
+        self.launch_timer = 0
+        self.carrier_y = 0
 
         # 타이틀 BGM 시작
         self.bgm.play_title()
@@ -90,6 +92,8 @@ class Game:
         self.stage_manager = StageManager(self.player, self.sfx)
         self.energy_bar = EnergyBar(self.player)
         self.score_display.update(self.score, self.highscore)
+        self.launch_timer = 180
+        self.carrier_y = SCREEN_HEIGHT - 360
 
     def start_game(self):
         self.reset_game()
@@ -152,6 +156,8 @@ class Game:
             # 다음 스테이지 가기 전에 플레이어 라이프 및 에너지를 일부 혹은 전부 복구
             self.player.energy.full_restore()
             self.state = STATE_PLAYING
+            self.launch_timer = 180
+            self.carrier_y = SCREEN_HEIGHT - 360
             self.bgm.play_stage(self.stage_manager.current_stage_num)
         else:
             # 보너스 점수 가산
@@ -164,6 +170,24 @@ class Game:
 
     def update(self):
         if self.state == STATE_PLAYING:
+            # ── Takeoff Intro Sequence (Carrier Launch) ─────────────────────
+            if self.launch_timer > 0:
+                self.launch_timer -= 1
+                self.carrier_y += 3
+                if self.launch_timer > 100:
+                    self.player.rect.centerx = SCREEN_WIDTH // 2
+                    self.player.rect.centery = self.carrier_y + 220
+                else:
+                    self.player.rect.centerx = SCREEN_WIDTH // 2
+                    self.player.rect.centery = max(SCREEN_HEIGHT - 180, self.player.rect.centery - 4)
+                    if self.launch_timer == 100:
+                        self.sfx.play('powerup')
+                self.stage_manager._bg.update()
+                self.player.options.update(self.player.rect.centerx, self.player.rect.centery)
+                self.explosion_manager.update()
+                self.bomb_effect.update()
+                return
+
             # 1. 키 입력 감지 후 플레이어 업데이트
             keys = pygame.key.get_pressed()
             self.player.update(keys, self.stage_manager.player_bullet_group)
@@ -212,6 +236,32 @@ class Game:
             self.explosion_manager.update()
             self.stage_manager._bg.update()
 
+    def draw_takeoff_carrier(self, surface):
+        """Draws a beautiful aircraft carrier flight deck for takeoff."""
+        w, h = 140, 480
+        x = SCREEN_WIDTH // 2 - w // 2
+        y = self.carrier_y
+
+        # Flight deck base
+        pygame.draw.rect(surface, (50, 52, 60), (x, y, w, h))
+        pygame.draw.rect(surface, (110, 100, 90), (x + 10, y + 10, w - 20, h - 20)) # Wood deck
+
+        # Runway markings (yellow dashed line in center)
+        for dy in range(15, h - 15, 30):
+            pygame.draw.line(surface, YELLOW, (SCREEN_WIDTH // 2, y + dy), (SCREEN_WIDTH // 2, y + dy + 15), 3)
+
+        # Left/Right runway borders (white lines)
+        pygame.draw.line(surface, WHITE, (x + 15, y), (x + 15, y + h), 2)
+        pygame.draw.line(surface, WHITE, (x + w - 15, y), (x + w - 15, y + h), 2)
+
+        # Bow pointer (pointy carrier front at top of deck)
+        pygame.draw.polygon(surface, (40, 42, 50), [(x, y), (SCREEN_WIDTH // 2, y - 40), (x + w, y)])
+
+        # Large yellow "43" painted on the runway to symbolize 1943!
+        font = pygame.font.SysFont('Arial Black', 32, bold=True)
+        num_txt = font.render("43", True, YELLOW)
+        surface.blit(num_txt, (SCREEN_WIDTH // 2 - num_txt.get_width() // 2, y + h - 120))
+
     def draw(self):
         self.screen.fill(BLACK)
 
@@ -221,6 +271,10 @@ class Game:
         elif self.state == STATE_PLAYING or self.state == STATE_PAUSED or self.state == STATE_STAGE_CLEAR:
             # 1. 배경 그리기
             self.stage_manager.draw_background(self.screen)
+
+            # Draw takeoff carrier on the ocean but behind other elements
+            if self.launch_timer > 0:
+                self.draw_takeoff_carrier(self.screen)
 
             # 2. 스프라이트 그룹 그리기
             self.stage_manager.enemy_group.draw(self.screen)

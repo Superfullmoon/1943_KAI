@@ -84,9 +84,12 @@ class BaseEnemy(pygame.sprite.Sprite):
 import os
 
 def _build_enemy_img(w, h, color_main=(60, 120, 60)):
-    """Build a Zero-style enemy fighter procedurally."""
+    """Build a Zero-style enemy fighter procedurally with authentic WWII details."""
     s = pygame.Surface((w, h), pygame.SRCALPHA)
     cx, cy = w // 2, h // 2
+
+    # ── Propeller Blur ───────────────────────────────────────
+    pygame.draw.ellipse(s, (220, 220, 220, 100), (cx - 16, 0, 32, 4))
 
     # ── Fuselage ─────────────────────────────────────────────
     pygame.draw.ellipse(s, color_main, (cx - 5, 2, 10, h - 4))
@@ -101,21 +104,35 @@ def _build_enemy_img(w, h, color_main=(60, 120, 60)):
                         [(0, wing_y + 6), (w, wing_y + 6),
                          (w - 4, wing_y - 2), (4, wing_y - 2)])
 
-    # ── Engine cowling (front circle) ───────────────────────
-    pygame.draw.circle(s, (40, 40, 40), (cx, h - 6), 5)
-    pygame.draw.circle(s, (80, 80, 80), (cx, h - 6), 3)
+    # Yellow leading edges on front of the wings (identification stripes)
+    pygame.draw.polygon(s, (255, 180, 0),
+                        [(4, wing_y - 1), (w - 4, wing_y - 1),
+                         (w - 10, wing_y + 1), (10, wing_y + 1)])
+
+    # ── Engine cowling & Propeller Hub ──────────────────────
+    pygame.draw.circle(s, (30, 30, 30), (cx, 4), 6)
+    pygame.draw.circle(s, (200, 40, 20), (cx, 3), 3)  # Red hub spinner
 
     # ── Cockpit ─────────────────────────────────────────────
-    pygame.draw.ellipse(s, (50, 100, 180), (cx - 4, cy - 8, 8, 10))
-    pygame.draw.ellipse(s, (130, 190, 255, 180), (cx - 3, cy - 7, 6, 7))
+    pygame.draw.ellipse(s, (50, 110, 190), (cx - 4, cy - 8, 8, 12))
+    pygame.draw.ellipse(s, (150, 210, 255, 180), (cx - 3, cy - 7, 6, 8))
 
-    # ── Red rising sun circle (tail marking) ────────────────
-    pygame.draw.circle(s, (200, 30, 30), (cx, wing_y), 5)
-    pygame.draw.circle(s, (255, 80, 80), (cx, wing_y), 3)
+    # ── Red rising sun circles (Hinomaru wing markings) ──────
+    pygame.draw.circle(s, (180, 20, 20), (8, wing_y + 2), 5)
+    pygame.draw.circle(s, (180, 20, 20), (w - 8, wing_y + 2), 5)
 
-    # ── Horizontal stabilizer ───────────────────────────────
-    pygame.draw.polygon(s, (50, 100, 50),
-                        [(cx - 10, 6), (cx + 10, 6), (cx + 8, 12), (cx - 8, 12)])
+    # ── Identification Fuselage Band ────────────────────────
+    pygame.draw.rect(s, (240, 240, 240), (cx - 4, cy + 6, 8, 2))
+
+    # ── Horizontal stabilizer (Tail wing) ───────────────────
+    pygame.draw.polygon(s, color_main,
+                        [(cx - 12, h - 8), (cx + 12, h - 8), (cx + 8, h - 4), (cx - 8, h - 4)])
+
+    # ── Vertical stabilizer (Tail fin) ──────────────────────
+    pygame.draw.line(s, (min(color_main[0]+20, 255),
+                         min(color_main[1]+20, 255),
+                         min(color_main[2]+20, 255)),
+                     (cx, h - 10), (cx, h - 2), 2)
     return s
 
 
@@ -124,7 +141,7 @@ def _get_enemy_img(w, h, color_main=(60, 120, 60)):
 
 class SmallFighter(BaseEnemy):
     score_value = SCORE_SMALL_ENEMY
-    hp_max      = 30
+    hp_max      = 45
 
     def _build_image(self):
         w, h = 34, 34
@@ -136,7 +153,7 @@ class SmallFighter(BaseEnemy):
 # ─────────────────────────────────────────────────────────────
 class MediumFighter(BaseEnemy):
     score_value = SCORE_MEDIUM_ENEMY
-    hp_max      = 80
+    hp_max      = 110
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
@@ -163,7 +180,7 @@ class MediumFighter(BaseEnemy):
 # ─────────────────────────────────────────────────────────────
 class HeavyFighter(BaseEnemy):
     score_value = SCORE_LARGE_ENEMY
-    hp_max      = 180
+    hp_max      = 250
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
@@ -214,7 +231,7 @@ def _build_warship_img(w, h, hull_col, deck_col):
 
 class SmallWarship(BaseEnemy):
     score_value = 200
-    hp_max      = 120
+    hp_max      = 160
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
@@ -238,7 +255,7 @@ class SmallWarship(BaseEnemy):
 
 class MediumWarship(BaseEnemy):
     score_value = 350
-    hp_max      = 250
+    hp_max      = 320
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
@@ -263,7 +280,7 @@ class MediumWarship(BaseEnemy):
 
 class LargeWarship(BaseEnemy):
     score_value = 500
-    hp_max      = 500
+    hp_max      = 600
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
@@ -368,6 +385,117 @@ class PowerUpItem(pygame.sprite.Sprite):
             player.options.add_option()
 
 
+# ─────────────────────────────────────────────────────────────
+#  Long Battleship — slow-moving long ship with 3 active turrets
+# ─────────────────────────────────────────────────────────────
+class LongBattleship(BaseEnemy):
+    score_value = 800
+    hp_max      = 600
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self._shoot_rate = 70
+        self.drop_chance = 0.50
+        self._t = 0
+
+    def _build_image(self):
+        w, h = 80, 240
+        self.image = pygame.Surface((w, h), pygame.SRCALPHA)
+
+        # Hull shape (pointed prow at top, tapered stern at bottom)
+        hull_pts = [
+            (w // 2, 4),               # Nose/prow (top)
+            (w - 6, 30),
+            (w - 4, h - 40),
+            (w // 2 + 10, h - 4),     # Stern (bottom)
+            (w // 2 - 10, h - 4),
+            (4, h - 40),
+            (6, 30),
+        ]
+        pygame.draw.polygon(self.image, (60, 65, 75), hull_pts)
+
+        # Deck area (gray-brown plates)
+        deck_pts = [
+            (w // 2, 12),
+            (w - 10, 32),
+            (w - 8, h - 42),
+            (w // 2 + 6, h - 8),
+            (w // 2 - 6, h - 8),
+            (8, h - 42),
+            (10, 32),
+        ]
+        pygame.draw.polygon(self.image, (100, 90, 90), deck_pts)
+
+        # Superstructure / bridge in center
+        pygame.draw.rect(self.image, (45, 50, 60), (w // 2 - 14, h // 2 - 25, 28, 50))
+        pygame.draw.rect(self.image, (75, 80, 90), (w // 2 - 10, h // 2 - 20, 20, 40))
+        # Chimneys / Funnels
+        pygame.draw.circle(self.image, (30, 30, 30), (w // 2, h // 2 - 10), 5)
+        pygame.draw.circle(self.image, (30, 30, 30), (w // 2, h // 2 + 10), 5)
+        # Windows on bridge
+        pygame.draw.rect(self.image, (0, 180, 255), (w // 2 - 8, h // 2 - 18, 16, 4))
+
+        # Wake lines at stern
+        pygame.draw.line(self.image, (200, 220, 255, 150), (w // 2 - 8, h - 4), (w // 2 - 20, h + 15), 2)
+        pygame.draw.line(self.image, (200, 220, 255, 150), (w // 2 + 8, h - 4), (w // 2 + 20, h + 15), 2)
+
+        self.base_image = self.image.copy()
+
+    def update(self):
+        # Long battleship scrolls slowly downward
+        self.rect.y += 1.0
+        self._t += 1
+        self._try_shoot()
+
+        # Draw dynamic turrets onto image
+        self.image = self.base_image.copy()
+        self._draw_turrets()
+
+        if (self.rect.top > SCREEN_HEIGHT + 100
+                or self.rect.right < -100 or self.rect.left > SCREEN_WIDTH + 100):
+            self.kill()
+
+    def _draw_turrets(self):
+        px, py = SCREEN_WIDTH // 2, SCREEN_HEIGHT - 200
+        if self._player_ref and self._player_ref.alive():
+            px, py = self._player_ref.rect.centerx, self._player_ref.rect.centery
+
+        dx = px - self.rect.centerx
+        dy = py - self.rect.centery
+        angle = math.atan2(dy, dx)
+
+        # Three turret positions: front, mid, rear
+        t_positions = [
+            (40, 50, self.hp > 400),
+            (40, 95, True),
+            (40, 190, self.hp > 200),
+        ]
+
+        for tx, ty, active in t_positions:
+            base_color = (40, 45, 50) if active else (25, 25, 25)
+            pygame.draw.circle(self.image, base_color, (tx, ty), 10)
+            pygame.draw.circle(self.image, (90, 90, 95) if active else (40, 40, 40), (tx, ty), 7)
+
+            bx = tx + math.cos(angle) * 16
+            by = ty + math.sin(angle) * 16
+            barrel_color = (30, 30, 32) if active else (15, 15, 15)
+            pygame.draw.line(self.image, barrel_color, (tx, ty), (bx, by), 3)
+
+    def _fire(self):
+        from bullet.enemy_bullet import EnemyBullet, spawn_aimed, spawn_spread
+        px, py = SCREEN_WIDTH // 2, SCREEN_HEIGHT - 200
+        if self._player_ref:
+            px, py = self._player_ref.rect.centerx, self._player_ref.rect.centery
+
+        if self.hp > 400:
+            spawn_aimed(self.rect.centerx, self.rect.top + 50, px, py, self._bullet_group, speed=ENEMY_BULLET_SPEED)
+
+        spawn_spread(self.rect.centerx, self.rect.top + 95, self._bullet_group, count=3, speed=ENEMY_BULLET_SPEED - 1, offset=self._t * 5)
+
+        if self.hp > 200:
+            spawn_aimed(self.rect.centerx, self.rect.top + 190, px, py, self._bullet_group, speed=ENEMY_BULLET_SPEED + 1)
+
+
 # ─── Factory ─────────────────────────────────────────────────
 ENEMY_CLASSES = {
     'SmallFighter':  SmallFighter,
@@ -377,6 +505,7 @@ ENEMY_CLASSES = {
     'SmallWarship':  SmallWarship,
     'MediumWarship': MediumWarship,
     'LargeWarship':  LargeWarship,
+    'LongBattleship': LongBattleship,
 }
 
 

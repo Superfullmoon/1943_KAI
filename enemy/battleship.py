@@ -88,6 +88,48 @@ class Carrier(BossBase):
         # Island superstructure (right side)
         pygame.draw.rect(self.image, (55, 65, 75), (w - 55, 5, 40, 45))
 
+    def _setup_components(self):
+        # Three destroyable turrets/cannons as requested
+        # Central Big Cannon (high HP)
+        c_center = BossComponent(self, 0, -10, hp=400, colour=(200, 30, 30), radius=20)
+        # Left Small Cannon
+        c_left   = BossComponent(self, -80, 20, hp=150, colour=(60, 60, 70), radius=12)
+        # Right Small Cannon
+        c_right  = BossComponent(self, 80, 20, hp=150, colour=(60, 60, 70), radius=12)
+
+        self.components.extend([c_center, c_left, c_right])
+
+    def _fire(self):
+        from bullet.enemy_bullet import spawn_aimed, spawn_spread, EnemyBullet
+        from config import ENEMY_BULLET_SPEED
+
+        px, py = SCREEN_WIDTH // 2, SCREEN_HEIGHT - 200
+        if self._player_ref and self._player_ref.alive():
+            px, py = self._player_ref.rect.centerx, self._player_ref.rect.centery
+
+        # If Central Big Cannon is still alive (components[0]):
+        if len(self.components) > 0 and self.components[0].alive():
+            # Spawns a massive 5-way spread
+            spawn_spread(self.rect.centerx, self.rect.centery - 10,
+                         self._bullet_group, count=5, speed=ENEMY_BULLET_SPEED - 1,
+                         offset=self._t * 3)
+
+        # If Left Small Cannon is alive (components[1]):
+        if len(self.components) > 1 and self.components[1].alive():
+            spawn_aimed(self.rect.centerx - 80, self.rect.centery + 20,
+                        px, py, self._bullet_group, speed=ENEMY_BULLET_SPEED + 1)
+
+        # If Right Small Cannon is alive (components[2]):
+        if len(self.components) > 2 and self.components[2].alive():
+            spawn_aimed(self.rect.centerx + 80, self.rect.centery + 20,
+                        px, py, self._bullet_group, speed=ENEMY_BULLET_SPEED + 1)
+
+        # Default backup shots in case components are dead
+        if all(not c.alive() for c in self.components):
+            spawn_spread(self.rect.centerx, self.rect.centery,
+                         self._bullet_group, count=3, speed=ENEMY_BULLET_SPEED - 2,
+                         offset=0)
+
 
 # ─────────────────────────────────────────────────────────────
 #  Storm Submarine  (Stage 4 boss)
