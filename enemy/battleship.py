@@ -28,13 +28,18 @@ def _draw_ship_body(surf, w, h, hull_col, deck_col, name_col=None):
     global _BATTLESHIP_IMG
     if _BATTLESHIP_IMG is None:
         img_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'image', 'boss', 'battleship.png')
-        _BATTLESHIP_IMG = load_and_scale_sprite(img_path, 200, 100) # Load at a high resolution
-        if not _BATTLESHIP_IMG:
-            _BATTLESHIP_IMG = pygame.Surface((w, h), pygame.SRCALPHA)
-            _BATTLESHIP_IMG.fill((100, 100, 100))
+        try:
+            _BATTLESHIP_IMG = pygame.image.load(img_path).convert_alpha()
+        except Exception as e:
+            print("Failed to load battleship image directly: {}".format(e))
+            _BATTLESHIP_IMG = None
 
-    scaled_img = pygame.transform.smoothscale(_BATTLESHIP_IMG, (w, h))
-    surf.blit(scaled_img, (0, 0))
+    if _BATTLESHIP_IMG is not None:
+        scaled_img = pygame.transform.smoothscale(_BATTLESHIP_IMG, (w, h))
+        surf.blit(scaled_img, (0, 0))
+    else:
+        # Procedural fallback or solid color
+        pygame.draw.rect(surf, (100, 100, 100), (0, 0, w, h))
 
 
 
