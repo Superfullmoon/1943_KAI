@@ -12,21 +12,35 @@ class Cloud(pygame.sprite.Sprite):
         super().__init__()
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
 
-        # 3D shaded cloud using base grey shadow and offset white highlights
-        shadow_col = (180, 185, 200, alpha)
-        white_col  = (255, 255, 255, alpha)
+        # 3D shaded cloud using base grey shadow, body, white puff, and offset highlights
+        shadow_col  = (140, 150, 175, int(alpha * 0.7))
+        body_col    = (190, 200, 215, alpha)
+        white_col   = (255, 255, 255, alpha)
+        highlight   = (255, 255, 255, min(255, int(alpha * 1.3)))
 
-        # 1. Shadow Base (Grey)
-        pygame.draw.ellipse(self.image, shadow_col, (4,      h//3,   w-8,     h*2//3 - 4))
-        pygame.draw.ellipse(self.image, shadow_col, (w//6+2, 2,      w*2//3 - 4, h*2//3 - 4))
-        pygame.draw.ellipse(self.image, shadow_col, (w//2,   h//4,   w//3 - 2,  h//2 - 2))
-        pygame.draw.ellipse(self.image, shadow_col, (2,      h//4,   w//3 - 2,  h//2 - 2))
+        # 1. Shadow Base
+        pygame.draw.ellipse(self.image, shadow_col, (4, h//3, w-8, h*2//3 - 4))
+        pygame.draw.ellipse(self.image, shadow_col, (w//6 + 4, 6, w*2//3 - 8, h*2//3 - 4))
+        pygame.draw.ellipse(self.image, shadow_col, (w//2, h//4, w//3 - 2, h//2 - 2))
+        pygame.draw.ellipse(self.image, shadow_col, (4, h//4, w//3 - 2, h//2 - 2))
 
-        # 2. Highlight Layer (White, shifted up & left)
-        pygame.draw.ellipse(self.image, white_col, (1,      h//3 - 3,   w-8,     h*2//3 - 4))
-        pygame.draw.ellipse(self.image, white_col, (w//6 - 1, 0,        w*2//3 - 4, h*2//3 - 4))
-        pygame.draw.ellipse(self.image, white_col, (w//2 - 2, h//4 - 2,   w//3 - 2,  h//2 - 2))
-        pygame.draw.ellipse(self.image, white_col, (0,      h//4 - 2,   w//3 - 2,  h//2 - 2))
+        # 2. Body Layer (slightly shifted up & left)
+        pygame.draw.ellipse(self.image, body_col, (2, h//3 - 2, w-6, h*2//3 - 6))
+        pygame.draw.ellipse(self.image, body_col, (w//6 + 2, 3, w*2//3 - 6, h*2//3 - 6))
+        pygame.draw.ellipse(self.image, body_col, (w//2 - 1, h//4 - 1, w//3 - 3, h//2 - 3))
+        pygame.draw.ellipse(self.image, body_col, (2, h//4 - 1, w//3 - 3, h//2 - 3))
+
+        # 3. Fluffy interior Layer
+        pygame.draw.ellipse(self.image, white_col, (6, h//3 - 4, w-12, h*2//3 - 8))
+        pygame.draw.ellipse(self.image, white_col, (w//6 + 4, 1, w*2//3 - 8, h*2//3 - 8))
+        pygame.draw.circle(self.image, white_col, (w//3, h//2), min(w, h)//4)
+        pygame.draw.circle(self.image, white_col, (2*w//3, h//2), min(w, h)//4)
+
+        # 4. Highlight Layer (White, shifted up & left for rim lighting)
+        pygame.draw.ellipse(self.image, highlight, (1, h//3 - 6, w-12, h*2//3 - 8))
+        pygame.draw.ellipse(self.image, highlight, (w//6 - 1, 0, w*2//3 - 8, h*2//3 - 8))
+        pygame.draw.circle(self.image, highlight, (w//3 - 2, h//2 - 2), min(w, h)//4 - 1)
+        pygame.draw.circle(self.image, highlight, (2*w//3 - 2, h//2 - 2), min(w, h)//4 - 1)
 
         self.rect   = self.image.get_rect(center=(x, y))
         self._speed = speed
@@ -191,10 +205,16 @@ class StageBase:
             pass
 
         if sea_img is not None:
-            iw, ih = sea_img.get_size()
+            # Shift the sea texture's color to match the stage's specific sea color theme
+            tinted_sea = sea_img.copy()
+            overlay = pygame.Surface(sea_img.get_size(), pygame.SRCALPHA)
+            overlay.fill((self._sea_col[0], self._sea_col[1], self._sea_col[2], 120))
+            tinted_sea.blit(overlay, (0, 0))
+
+            iw, ih = tinted_sea.get_size()
             for y in range(sky_h, H, ih):
                 for x in range(0, SCREEN_WIDTH, iw):
-                    s.blit(sea_img, (x, y))
+                    s.blit(tinted_sea, (x, y))
         else:
             sc = self._sea_col
             pygame.draw.rect(s, sc, (0, sky_h, SCREEN_WIDTH, sea_h))

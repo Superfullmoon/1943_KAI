@@ -2,11 +2,13 @@
 #  player/player.py  —  Player aircraft sprite
 # ============================================================
 import pygame
+import os
 from config import (SCREEN_WIDTH, SCREEN_HEIGHT,
                     PLAYER_SPEED, PLAYER_LIVES, PLAYER_BOMB_COUNT,
                     PLAYER_INVINCIBLE_FRAMES, PLAYER_SHOOT_COOLDOWN,
                     KEY_SHOOT, KEY_BOMB,
-                    SILVER, CYAN, YELLOW, ORANGE, DARK_GRAY, WHITE)
+                    SILVER, CYAN, YELLOW, ORANGE, DARK_GRAY, WHITE,
+                    load_and_scale_sprite)
 from player.weapon  import WeaponSystem
 from player.energy  import EnergySystem
 from player.option  import OptionManager
@@ -16,6 +18,11 @@ from bullet.player_bullet import spawn_weapon_bullets
 # ── Player aircraft surface (hand-crafted P-38 style) ────────
 def _build_player_surf():
     w, h = 52, 68
+    img_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'image', 'player', 'player.png')
+    img = load_and_scale_sprite(img_path, w, h)
+    if img is not None:
+        return img
+
     s = pygame.Surface((w, h), pygame.SRCALPHA)
 
     # ── Twin-boom fuselage (P-38 style) ────────────────────────
@@ -202,6 +209,9 @@ class Player(pygame.sprite.Sprite):
             return
         surface.blit(self.image, self.rect)
         self.options.draw(surface)
+
+    def alive(self) -> bool:
+        return self.lives > 0
 
     # ── Properties ───────────────────────────────────────────
     @property
