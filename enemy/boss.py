@@ -9,7 +9,7 @@ from config import (SCREEN_WIDTH, DARK_GRAY, GRAY, WHITE, RED, ORANGE, YELLOW,
 class BossComponent(pygame.sprite.Sprite):
     """A destroyable sub-component of the boss (turret, antenna, etc.)."""
 
-    def __init__(self, parent, offset_x, offset_y, hp, colour, radius=14):
+    def __init__(self, parent, offset_x, offset_y, hp, colour, radius=14, comp_type='main_turret'):
         super().__init__()
         self.parent   = parent
         self.offset_x = offset_x
@@ -18,26 +18,68 @@ class BossComponent(pygame.sprite.Sprite):
         self.hp_max   = hp
         self._colour  = colour
         self._radius  = radius
+        self.comp_type = comp_type
         self.score_value = SCORE_BOSS_PART
 
-        self.image = self._build(colour, radius)
+        # Build base image that we will rotate dynamically
+        self._base_image = self._build(colour, radius, comp_type)
+        self.image = self._base_image
         self.rect  = self.image.get_rect()
         self.mask  = pygame.mask.from_surface(self.image)
         self._destroyed = False
 
     @staticmethod
-    def _build(colour, radius):
+    def _build(colour, radius, comp_type):
         r  = radius
-        s  = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-        pygame.draw.circle(s, colour,         (r, r), r)
-        pygame.draw.circle(s, (255, 255, 255), (r, r), r, 2)
-        pygame.draw.circle(s, (50, 50, 50),   (r, r), r // 2)
+        s  = pygame.Surface((r * 2 + 12, r * 2 + 12), pygame.SRCALPHA)
+        cx, cy = r + 6, r + 6
+
+        if comp_type == 'main_turret':
+            # Draw a heavy dual-barrel main cannon pointing UP
+            pygame.draw.circle(s, (40, 42, 50), (cx, cy), r)
+            pygame.draw.circle(s, colour, (cx, cy), r - 2)
+            pygame.draw.rect(s, (30, 32, 40), (cx - r//2, cy - r//2, r, r), border_radius=3)
+            pygame.draw.rect(s, (15, 15, 18), (cx - 5, cy - r - 4, 3, r + 2))
+            pygame.draw.rect(s, (15, 15, 18), (cx + 2, cy - r - 4, 3, r + 2))
+            pygame.draw.circle(s, (255, 200, 30), (cx - 3.5, cy - r - 4), 2)
+            pygame.draw.circle(s, (255, 200, 30), (cx + 3.5, cy - r - 4), 2)
+
+        elif comp_type == 'aa_gun':
+            # Draw an anti-aircraft gun with dual thin barrels
+            pygame.draw.circle(s, (60, 20, 20), (cx, cy), r)
+            pygame.draw.circle(s, (210, 70, 50), (cx, cy), r - 2)
+            pygame.draw.rect(s, (10, 10, 12), (cx - 4, cy - r - 2, 2, r + 2))
+            pygame.draw.rect(s, (10, 10, 12), (cx + 2, cy - r - 2, 2, r + 2))
+
+        elif comp_type == 'machine_gun':
+            # Draw a small machine gun turret
+            pygame.draw.circle(s, (40, 50, 60), (cx, cy), r)
+            pygame.draw.circle(s, (240, 180, 20), (cx, cy), r - 2)
+            pygame.draw.rect(s, (10, 10, 12), (cx - 1, cy - r - 3, 2, r + 3))
+
+        else:
+            # Fallback
+            pygame.draw.circle(s, colour,         (cx, cy), r)
+            pygame.draw.circle(s, (255, 255, 255), (cx, cy), r, 2)
+            pygame.draw.circle(s, (50, 50, 50),   (cx, cy), r // 2)
+
         return s
 
     def sync(self):
-        """Move to parent body position + offset."""
+        """Move to parent body position + offset, and point barrel at player."""
         self.rect.centerx = self.parent.rect.centerx + self.offset_x
         self.rect.centery = self.parent.rect.centery + self.offset_y
+
+        if self.parent._player_ref and self.parent._player_ref.alive():
+            px, py = self.parent._player_ref.rect.center
+            dx = px - self.rect.centerx
+            dy = py - self.rect.centery
+            angle = math.degrees(math.atan2(-dy, dx)) - 90
+
+            self.image = pygame.transform.rotate(self._base_image, angle)
+            cx, cy = self.rect.center
+            self.rect = self.image.get_rect(center=(cx, cy))
+            self.mask = pygame.mask.from_surface(self.image)
 
     def take_damage(self, amount):
         if self._destroyed:

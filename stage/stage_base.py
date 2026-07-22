@@ -12,21 +12,41 @@ class Cloud(pygame.sprite.Sprite):
         super().__init__()
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
 
-        # 3D shaded cloud using base grey shadow and offset white highlights
-        shadow_col = (180, 185, 200, alpha)
-        white_col  = (255, 255, 255, alpha)
+        # 4-layer 3D volumetric cloud representation:
+        # Layer 1: Darkest underbelly shadow (ambient occlusion)
+        # Layer 2: Main body cloud shadow (grayish-blue)
+        # Layer 3: Fluffy cloud body (soft white/gray transition)
+        # Layer 4: Bright sun-lit highlight peaks (pure white)
 
-        # 1. Shadow Base (Grey)
-        pygame.draw.ellipse(self.image, shadow_col, (4,      h//3,   w-8,     h*2//3 - 4))
-        pygame.draw.ellipse(self.image, shadow_col, (w//6+2, 2,      w*2//3 - 4, h*2//3 - 4))
-        pygame.draw.ellipse(self.image, shadow_col, (w//2,   h//4,   w//3 - 2,  h//2 - 2))
-        pygame.draw.ellipse(self.image, shadow_col, (2,      h//4,   w//3 - 2,  h//2 - 2))
+        num_puffs = random.randint(5, 8)
+        puffs = []
+        for _ in range(num_puffs):
+            px = random.randint(w // 4, w * 3 // 4)
+            py = random.randint(h // 3, h * 2 // 3)
+            pr = random.randint(min(h // 4, 15), min(h // 2, w // 4))
+            puffs.append((px, py, pr))
 
-        # 2. Highlight Layer (White, shifted up & left)
-        pygame.draw.ellipse(self.image, white_col, (1,      h//3 - 3,   w-8,     h*2//3 - 4))
-        pygame.draw.ellipse(self.image, white_col, (w//6 - 1, 0,        w*2//3 - 4, h*2//3 - 4))
-        pygame.draw.ellipse(self.image, white_col, (w//2 - 2, h//4 - 2,   w//3 - 2,  h//2 - 2))
-        pygame.draw.ellipse(self.image, white_col, (0,      h//4 - 2,   w//3 - 2,  h//2 - 2))
+        # Sort puffs from rear/left to front/right to build structured layer depth
+        puffs.sort(key=lambda p: (p[1], p[0]))
+
+        # Layer 1 & 2: Shadows (offset down and right)
+        for shadow_offset, shadow_col in [(4, (140, 145, 160, int(alpha * 0.45))), (2, (170, 175, 190, int(alpha * 0.7)))]:
+            for px, py, pr in puffs:
+                pygame.draw.circle(self.image, shadow_col, (px + shadow_offset, py + shadow_offset), pr)
+
+        # Layer 3: Main body
+        body_col = (235, 240, 250, alpha)
+        for px, py, pr in puffs:
+            pygame.draw.circle(self.image, body_col, (px, py), pr)
+
+        # Layer 4: Pure white highlights (offset up and left, slightly smaller)
+        highlight_col = (255, 255, 255, min(255, int(alpha * 1.25)))
+        for px, py, pr in puffs:
+            hx = px - int(pr * 0.15)
+            hy = py - int(pr * 0.20)
+            hr = int(pr * 0.8)
+            if hr > 0:
+                pygame.draw.circle(self.image, highlight_col, (hx, hy), hr)
 
         self.rect   = self.image.get_rect(center=(x, y))
         self._speed = speed
@@ -43,37 +63,49 @@ class Island(pygame.sprite.Sprite):
     def __init__(self, x, y, size, speed):
         super().__init__()
         w = size
-        h = int(size * 0.65)
+        h = int(size * 0.7)
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
 
-        # 1. Sandy Shoreline Beach Base (pale yellow sand)
-        beach_col = (235, 215, 150)
-        pygame.draw.ellipse(self.image, beach_col, (0, 0, w, h))
+        # Draw an organic, irregular island shape using a cluster of overlapping circles
+        num_clusters = random.randint(3, 5)
+        clusters = []
+        for _ in range(num_clusters):
+            cx = random.randint(w // 4, w * 3 // 4)
+            cy = random.randint(h // 4, h * 3 // 4)
+            cr = random.randint(size // 5, size // 3)
+            clusters.append((cx, cy, cr))
 
-        # 2. Shallow coastal water ring outline (turquoise reef)
-        reef_col = (40, 180, 170)
-        pygame.draw.ellipse(self.image, reef_col, (4, 4, w-8, h-8), 2)
+        # Shore reef (semi-transparent shallow coral reef)
+        for cx, cy, cr in clusters:
+            pygame.draw.circle(self.image, (40, 180, 170, 140), (cx, cy), cr + 4)
 
-        # 3. Dense jungle interior (dark green vegetation base)
-        jungle_dark = (30, 95, 45)
-        inner_w = int(w * 0.75)
-        inner_h = int(h * 0.75)
-        pygame.draw.ellipse(self.image, jungle_dark,
-                            ((w - inner_w)//2, (h - inner_h)//2, inner_w, inner_h))
+        # Beach outline (pale yellow sand)
+        for cx, cy, cr in clusters:
+            pygame.draw.circle(self.image, (235, 215, 150), (cx, cy), cr + 1)
 
-        # 4. Lush vegetation highlights (lighter green canopy)
-        jungle_light = (60, 165, 80)
-        canopy_w = int(w * 0.5)
-        canopy_h = int(h * 0.5)
-        pygame.draw.ellipse(self.image, jungle_light,
-                            ((w - canopy_w)//2, (h - canopy_h)//2 - 2, canopy_w, canopy_h))
+        # Dense jungle interior (dark green base)
+        for cx, cy, cr in clusters:
+            pygame.draw.circle(self.image, (30, 95, 45), (cx, cy), int(cr * 0.8))
 
-        # 5. Peak forest highlight (bright yellow-green canopy top)
-        peak_col = (110, 205, 90)
-        peak_w = int(w * 0.25)
-        peak_h = int(h * 0.25)
-        pygame.draw.ellipse(self.image, peak_col,
-                            ((w - peak_w)//2 - 2, (h - peak_h)//2 - 4, peak_w, peak_h))
+        # Lush vegetation highlights (lighter green canopy)
+        for cx, cy, cr in clusters:
+            pygame.draw.circle(self.image, (60, 165, 80), (cx - int(cr*0.1), cy - int(cr*0.15)), int(cr * 0.6))
+
+        # Peak forest ridges (bright yellow-green)
+        for cx, cy, cr in clusters:
+            pygame.draw.circle(self.image, (110, 205, 90), (cx - int(cr*0.2), cy - int(cr*0.25)), int(cr * 0.35))
+
+        # Retro military airfield runway (an iconic 1943 feature for larger islands)
+        if size >= 75:
+            # Dark gray runway
+            pygame.draw.polygon(self.image, (45, 45, 50), [
+                (w//4, h//2 - 5),
+                (w*3//4, h//2 - 2),
+                (w*3//4, h//2 + 2),
+                (w//4, h//2 + 5)
+            ])
+            # Runway stripes (yellow dashes)
+            pygame.draw.line(self.image, (255, 215, 0), (w//4 + 10, h//2), (w*3//4 - 10, h//2), 1)
 
         self.rect   = self.image.get_rect(center=(x, y))
         self._speed = speed
@@ -195,6 +227,11 @@ class StageBase:
             for y in range(sky_h, H, ih):
                 for x in range(0, SCREEN_WIDTH, iw):
                     s.blit(sea_img, (x, y))
+            # Blend the sea texture with the stage-specific color theme overlay (alpha 120)
+            overlay = pygame.Surface((SCREEN_WIDTH, sea_h), pygame.SRCALPHA)
+            sc = self._sea_col
+            overlay.fill((sc[0], sc[1], sc[2], 120))
+            s.blit(overlay, (0, sky_h))
         else:
             sc = self._sea_col
             pygame.draw.rect(s, sc, (0, sky_h, SCREEN_WIDTH, sea_h))
