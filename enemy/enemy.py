@@ -497,18 +497,22 @@ class GroundTurret(BaseEnemy):
 class PowerUpItem(pygame.sprite.Sprite):
     """Collectible item dropped by enemies."""
 
-    TYPES = ['ENERGY', 'WEAPON', 'BOMB', 'OPTION']
+    TYPES = ['ENERGY', 'WEAPON', 'BOMB', 'OPTION', 'VULCAN', 'SHOTGUN', 'LASER', 'WIDE']
     COLOURS = {
         'ENERGY': (50, 220, 80),
         'WEAPON': (255, 200, 30),
         'BOMB':   (255, 80, 30),
         'OPTION': (80, 180, 255),
+        'VULCAN': (255, 200, 30),
+        'SHOTGUN': (200, 100, 255),
+        'LASER': (100, 255, 255),
+        'WIDE': (255, 100, 100)
     }
 
     def __init__(self, x, y, item_type=None):
         super().__init__()
         self.item_type = item_type or random.choice(self.TYPES[:2])  # bias toward useful items
-        col = self.COLOURS[self.item_type]
+        col = self.COLOURS.get(self.item_type, (255, 255, 255))
 
         w = h = 22
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
@@ -525,9 +529,13 @@ class PowerUpItem(pygame.sprite.Sprite):
 
     def cycle_type(self):
         """Cycles the item type when hit by a player bullet, matching the original 1943."""
-        idx = (self.TYPES.index(self.item_type) + 1) % len(self.TYPES)
+        # Find index dynamically or fallback to 0
+        try:
+            idx = (self.TYPES.index(self.item_type) + 1) % len(self.TYPES)
+        except ValueError:
+            idx = 0
         self.item_type = self.TYPES[idx]
-        col = self.COLOURS[self.item_type]
+        col = self.COLOURS.get(self.item_type, (255, 255, 255))
 
         w = h = 22
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
@@ -552,6 +560,9 @@ class PowerUpItem(pygame.sprite.Sprite):
             player.energy.recover(ENERGY_ITEM_AMOUNT)
         elif self.item_type == 'WEAPON':
             player.weapon.cycle_weapon()
+        elif self.item_type in ('VULCAN', 'SHOTGUN', 'LASER', 'WIDE'):
+            player.weapon.current = self.item_type
+            player.weapon.level = 1
         elif self.item_type == 'BOMB':
             player.bomb_count = min(player.bomb_count + 1, PLAYER_BOMB_COUNT + 2)
         elif self.item_type == 'OPTION':
