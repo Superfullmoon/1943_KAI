@@ -1,12 +1,24 @@
 # ============================================================
 #  enemy/enemy.py  —  Base enemy class + concrete types
 # ============================================================
-import pygame, random, math
+import pygame, random, math, os
 from config import (SCREEN_WIDTH, SCREEN_HEIGHT,
                     RED, DARK_RED, ORANGE, YELLOW, WHITE, GRAY, DARK_GRAY,
                     SCORE_SMALL_ENEMY, SCORE_MEDIUM_ENEMY, SCORE_LARGE_ENEMY,
                     ENEMY_BULLET_SPEED)
 from enemy.enemy_ai import get_pattern
+
+try:
+    from config import load_and_scale_sprite
+except ImportError:
+    def load_and_scale_sprite(path, target_w, target_h, colorkey='auto'):
+        try:
+            img = pygame.image.load(path).convert_alpha()
+            img = pygame.transform.smoothscale(img, (target_w, target_h))
+            return img
+        except Exception as e:
+            print("Failed to load sprite {}: {}".format(path, e))
+            return None
 
 
 # ─────────────────────────────────────────────────────────────
@@ -81,10 +93,18 @@ class BaseEnemy(pygame.sprite.Sprite):
 # ─────────────────────────────────────────────────────────────
 #  Small Fighter (Type A — red)
 # ─────────────────────────────────────────────────────────────
-import os
 
 def _build_enemy_img(w, h, color_main=(60, 120, 60)):
     """Build a WWII-style enemy fighter procedurally (similar to Zero or twin-engine bombers in 1943)."""
+    img_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'image', 'enemy', 'small_plane.png')
+    img = load_and_scale_sprite(img_path, w, h)
+    if img is not None:
+        tint_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        tint_surf.fill(color_main + (255,))
+        tinted = img.copy()
+        tinted.blit(tint_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        return tinted
+
     s = pygame.Surface((w, h), pygame.SRCALPHA)
     cx, cy = w // 2, h // 2
 
@@ -212,6 +232,11 @@ class HeavyFighter(BaseEnemy):
 #  Small Warship — scrolls upward on the sea
 # ─────────────────────────────────────────────────────────────
 def _build_warship_img(w, h, hull_col, deck_col):
+    img_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'image', 'boss', 'battleship.png')
+    img = load_and_scale_sprite(img_path, w, h)
+    if img is not None:
+        return img
+
     s = pygame.Surface((w, h), pygame.SRCALPHA)
     cx = w // 2
 
@@ -370,6 +395,12 @@ class LongWarship(BaseEnemy):
 
     def _build_image(self):
         w, h = 48, 190
+        img_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'image', 'boss', 'battleship.png')
+        img = load_and_scale_sprite(img_path, w, h)
+        if img is not None:
+            self.image = img
+            return
+
         # Let's draw an extremely detailed long WWII battleship!
         self.image = pygame.Surface((w, h), pygame.SRCALPHA)
         cx = w // 2

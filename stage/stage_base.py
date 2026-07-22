@@ -191,10 +191,16 @@ class StageBase:
             pass
 
         if sea_img is not None:
-            iw, ih = sea_img.get_size()
+            # Shift the sea texture's color to match the stage's specific sea color theme
+            tinted_sea = sea_img.copy()
+            overlay = pygame.Surface(sea_img.get_size(), pygame.SRCALPHA)
+            overlay.fill((self._sea_col[0], self._sea_col[1], self._sea_col[2], 120))
+            tinted_sea.blit(overlay, (0, 0))
+
+            iw, ih = tinted_sea.get_size()
             for y in range(sky_h, H, ih):
                 for x in range(0, SCREEN_WIDTH, iw):
-                    s.blit(sea_img, (x, y))
+                    s.blit(tinted_sea, (x, y))
         else:
             sc = self._sea_col
             pygame.draw.rect(s, sc, (0, sky_h, SCREEN_WIDTH, sea_h))

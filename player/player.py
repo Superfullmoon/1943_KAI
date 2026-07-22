@@ -2,6 +2,7 @@
 #  player/player.py  —  Player aircraft sprite
 # ============================================================
 import pygame
+import os
 from config import (SCREEN_WIDTH, SCREEN_HEIGHT,
                     PLAYER_SPEED, PLAYER_LIVES, PLAYER_BOMB_COUNT,
                     PLAYER_INVINCIBLE_FRAMES, PLAYER_SHOOT_COOLDOWN,
@@ -12,10 +13,27 @@ from player.energy  import EnergySystem
 from player.option  import OptionManager
 from bullet.player_bullet import spawn_weapon_bullets
 
+try:
+    from config import load_and_scale_sprite
+except ImportError:
+    def load_and_scale_sprite(path, target_w, target_h, colorkey='auto'):
+        try:
+            img = pygame.image.load(path).convert_alpha()
+            img = pygame.transform.smoothscale(img, (target_w, target_h))
+            return img
+        except Exception as e:
+            print("Failed to load sprite {}: {}".format(path, e))
+            return None
+
 
 # ── Player aircraft surface (hand-crafted P-38 style) ────────
 def _build_player_surf():
     w, h = 52, 68
+    img_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'image', 'player', 'player.png')
+    img = load_and_scale_sprite(img_path, w, h)
+    if img is not None:
+        return img
+
     s = pygame.Surface((w, h), pygame.SRCALPHA)
 
     # ── Twin-boom fuselage (P-38 style) ────────────────────────
@@ -202,6 +220,9 @@ class Player(pygame.sprite.Sprite):
             return
         surface.blit(self.image, self.rect)
         self.options.draw(surface)
+
+    def alive(self) -> bool:
+        return self.lives > 0
 
     # ── Properties ───────────────────────────────────────────
     @property
