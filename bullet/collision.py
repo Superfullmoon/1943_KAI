@@ -33,6 +33,19 @@ def check_all(player, player_bullets, enemy_group, enemy_bullets,
                                     'large' if enemy.score_value >= 300 else 'small')
                 sfx.play('explosion_small')
                 sfx.play('explosion_small')
+            else:
+                # Play tactile metallic clank hit sound for larger ships/bosses/components
+                is_heavy = enemy.score_value >= 200 or hasattr(enemy, 'parent')
+                if is_heavy:
+                    sfx.play('boss_hit')
+
+    # ── Player bullets ↔ Items (Shooting items to change type) ──
+    item_hits = pygame.sprite.groupcollide(item_group, player_bullets,
+                                           False, True,
+                                           pygame.sprite.collide_rect)
+    for item in item_hits:
+        item.cycle_type()
+        sfx.play('boss_hit')
 
     # ── Enemy bullets ↔ Player ─────────────────────────────────
     if player.alive() and not player.invincible:

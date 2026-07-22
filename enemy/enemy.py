@@ -35,6 +35,7 @@ class BaseEnemy(pygame.sprite.Sprite):
         self.drop_chance    = 0.12
 
         self._build_image()
+        self.image_base = self.image
         self.rect = self.image.get_rect(center=(x, y))
         self.mask = pygame.mask.from_surface(self.image)
 
@@ -47,8 +48,23 @@ class BaseEnemy(pygame.sprite.Sprite):
         pygame.draw.circle(self.image, RED, (16, 16), 14)
 
     def update(self):
+        old_center = self.rect.center
         self._move(self)
         self._try_shoot()
+
+        # Smooth sprite rotation based on movement direction (planes only)
+        is_plane = not any(isinstance(self, cls) for cls in [GroundTurret, SmallWarship, MediumWarship, LargeWarship, LongWarship])
+        if is_plane and hasattr(self, 'image_base') and self.image_base:
+            dx = self.rect.centerx - old_center[0]
+            dy = self.rect.centery - old_center[1]
+            if dx != 0 or dy != 0:
+                angle = math.degrees(math.atan2(-dy, dx)) - 90
+                # Rotate from original base image to avoid quality degradation
+                self.image = pygame.transform.rotate(self.image_base, angle)
+                cx, cy = self.rect.center
+                self.rect = self.image.get_rect(center=(cx, cy))
+                self.mask = pygame.mask.from_surface(self.image)
+
         # Kill if off screen
         if (self.rect.top > SCREEN_HEIGHT + 60
                 or self.rect.right < -60 or self.rect.left > SCREEN_WIDTH + 60):
@@ -506,6 +522,21 @@ class PowerUpItem(pygame.sprite.Sprite):
         self.rect  = self.image.get_rect(center=(x, y))
         self._vy   = 2.5
         self._t    = 0
+
+    def cycle_type(self):
+        """Cycles the item type when hit by a player bullet, matching the original 1943."""
+        idx = (self.TYPES.index(self.item_type) + 1) % len(self.TYPES)
+        self.item_type = self.TYPES[idx]
+        col = self.COLOURS[self.item_type]
+
+        w = h = 22
+        self.image = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.circle(self.image, (*col, 220), (w//2, h//2), w//2 - 1)
+        pygame.draw.circle(self.image, WHITE, (w//2, h//2), 5)
+        # Label letter
+        font = pygame.font.SysFont('Arial', 11, bold=True)
+        lbl  = font.render(self.item_type[0], True, (0, 0, 0))
+        self.image.blit(lbl, (w//2 - lbl.get_width()//2, h//2 - lbl.get_height()//2))
 
     def update(self):
         self._t     += 1
