@@ -143,6 +143,10 @@ class BossBase(pygame.sprite.Sprite):
     def is_dead(self):
         return not self.alive()
 
+    @property
+    def all_components_dead(self) -> bool:
+        return all(getattr(c, '_destroyed', False) for c in self.components)
+
     def draw_hp_bar(self, surface):
         """Render a red HP bar at the top of the screen."""
         bar_w = SCREEN_WIDTH - 40
